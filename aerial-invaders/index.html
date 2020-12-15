@@ -1,0 +1,32 @@
+<html>
+<head>
+    <style>
+        :root {
+            --first-color: #bababa;
+            --second-color: #2b2b2b;
+        }
+
+        body {
+            padding:0;
+            margin:0;
+            color: var(--first-color);
+            background-color: var(--second-color);
+            font-family:'Press Start 2P', cursive;
+        }
+
+        canvas#game {
+            cursor: none;
+            border: 1px solid #bababa;
+            margin-left: calc(50vw - 250px);
+            margin-top: calc(50vh - 250px);
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="game" width="500" height="500"></canvas>
+
+<script src="config.js" type="module"></script>
+<script src="main.js" type="module"></script>
+</body>
+</html>
