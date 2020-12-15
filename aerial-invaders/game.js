@@ -1,35 +1,18 @@
 import Missile from "./missile.js"
 import Spaceship from "./spaceship.js"
 
+
 export default class Game {
-    canvas = document.querySelector('#game');
-    context = this.canvas.getContext('2d');
     pause = false;
 
     spaceship;
     missiles = [];
 
-    constructor(config) {
+    constructor(config, canvas, drawService) {
         this.config = config;
-        document.onvisibilitychange = () => {
-            this.pause = document.hidden;
-            console.log(this.pause);
-        };
-    }
-
-    get width() {
-        return this.canvas.getBoundingClientRect().width;
-    }
-
-    get height() {
-        return this.canvas.getBoundingClientRect().height;
-    }
-
-    draw = (drawable) => {
-        this.context.fillStyle = drawable.color;
-        this.context.translate(drawable.x, drawable.y);
-        this.context.fill(drawable.path2D);
-        this.resetContextTransform();
+        this.canvas = canvas;
+        this.drawService = drawService;
+        document.onvisibilitychange = () => this.pause = document.hidden;
     }
 
     run() {
@@ -53,15 +36,6 @@ export default class Game {
         };
     }
 
-    drawAll() {
-        this.context.clearRect(0, 0, this.width, this.height);
-        this.missiles.forEach(this.draw);
-        this.draw(this.spaceship);
-    }
-
-    resetContextTransform() {
-        this.context.setTransform(1, 0, 0, 1, 0, 0);
-    }
 
     executeEveryFrameActions() {
         if (!this.pause) {
@@ -81,7 +55,10 @@ export default class Game {
             // create enemies
             // move enemies
 
-            this.drawAll();
+            this.drawService.draw(
+                ...this.missiles,
+                this.spaceship
+            );
         }
     }
 
