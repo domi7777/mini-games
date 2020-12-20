@@ -21,7 +21,13 @@ export default class DrawService {
             .forEach(drawable => this.#draw(drawable));
     }
 
-    #draw (drawable) {
+    drawText(text, position = {x: 10, y: 10}, size = 20) {
+        this.context.fillStyle = 'White';
+        this.context.font = `${size}px Arial`;
+        this.context.fillText(text, position.x, position.y);
+    }
+
+    #draw(drawable) {
         this.context.fillStyle = drawable.color;
         this.context.translate(drawable.x, drawable.y);
         this.context.fill(drawable.path2D);

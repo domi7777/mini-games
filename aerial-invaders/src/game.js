@@ -13,6 +13,8 @@ export default class Game {
     lastMissileFiredTimeStamp = Date.now();
 
     numberOfEnemies = 20; // fixme config
+    actionsInterval;
+    collisionsChecksInterval;
 
     constructor(config, canvas, drawService) {
         this.config = config;
@@ -31,8 +33,8 @@ export default class Game {
             this.spaceship.y = position.y;
         }
 
-        const interval = setInterval(this.executeEveryFrameActions.bind(this), 1000 / 60);
-        const collisionsChecksInterval = setInterval(() => this.checkCollisions(), 5);
+        this.actionsInterval = setInterval(this.executeEveryFrameActions.bind(this), 1000 / 60);
+        this.collisionsChecksInterval = setInterval(() => this.checkCollisions(), 5);
         return this;
     }
 
@@ -47,6 +49,11 @@ export default class Game {
                 ...this.enemies,
                 this.spaceship
             );
+            this.drawService.drawText(`lives: ${this.spaceship.lives}`, {x: 400, y: 490});
+            //TODO this.drawService.drawText(`score: ${this.spaceship.lives}`, {x: 400, y: 490});
+            if (this.spaceship.lives <= 0) {
+                this.gameOver();
+            }
         }
     }
 
@@ -155,5 +162,11 @@ export default class Game {
 
     isSpaceshipInSafePeriod() {
         return this.spaceship.timeOfDeath + this.config.spaceship.safeDeathPeriod > Date.now();
+    }
+
+    gameOver() {
+        clearInterval(this.actionsInterval);
+        clearInterval(this.collisionsChecksInterval);
+        this.drawService.drawText('Game over', {x: 120, y: 260}, 50);
     }
 }
