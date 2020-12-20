@@ -1,3 +1,5 @@
+import ViewUtils from "./view-utils.js"
+
 export default class DrawService {
     constructor(canvas) {
         this.canvas = canvas;
@@ -5,17 +7,18 @@ export default class DrawService {
     }
 
     get width() {
-        return this.canvas.getBoundingClientRect().width;
+        return ViewUtils.getHeight(this.canvas);
     }
 
     get height() {
-        return this.canvas.getBoundingClientRect().height;
+        return ViewUtils.getWidth(this.canvas);
     }
 
     draw(...drawables) {
         this.context.clearRect(0, 0, this.width, this.height);
-        console.log(drawables)
-        drawables.forEach(drawable => this.#draw(drawable));
+        drawables
+            .filter(drawable => !!drawable.shouldDraw)
+            .forEach(drawable => this.#draw(drawable));
     }
 
     #draw (drawable) {

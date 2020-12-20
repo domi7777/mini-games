@@ -1,6 +1,6 @@
 import config from "./config.js"
-import Game from "./game.js"
-import DrawService from "./draw-service.js"
+import Game from "./src/game.js"
+import DrawService from "./src/draw-service.js"
 
 
 const canvas = document.querySelector('#game');
