@@ -8,5 +8,6 @@ export default class Drawable {
         this.color = config.color;
         this.width = config.width;
         this.height = config.height;
+        this.config = config;
     }
 }

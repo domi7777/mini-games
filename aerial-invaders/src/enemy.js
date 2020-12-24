@@ -5,5 +5,6 @@ export default class Enemy extends Drawable {
         super(config);
         this.speed = config.speed;
         this.reloadTime = config.reloadTime;
+        this.scoreValue = config.scoreValue;
     }
 }

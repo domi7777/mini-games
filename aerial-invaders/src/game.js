@@ -1,172 +1,69 @@
-import Missile from "./missile.js"
 import Spaceship from "./spaceship.js"
 import MouseUtils from "./mouse-utils.js"
-import ViewUtils from "./view-utils.js"
-import Enemy from "./enemy.js";
-import CollisionUtils from "./collision-utils.js";
+import Stage from "./stage.js";
+
 
 export default class Game {
+    framesPerSecond = 60;
     pause = false;
     spaceship;
-    missiles = [];
-    enemies = [];
-    lastMissileFiredTimeStamp = Date.now();
+    currentStage;
 
-    numberOfEnemies = 20; // fixme config
-    actionsInterval;
-    collisionsChecksInterval;
+    everyFrameActionsInterval;
 
     constructor(config, canvas, drawService) {
         this.config = config;
         this.canvas = canvas;
-        this.context = this.canvas.getContext('2d');
         this.drawService = drawService;
         document.onvisibilitychange = () => this.pause = document.hidden;
     }
 
-    run() {
+    async run() {
         this.spaceship = new Spaceship(this.config.spaceship);
-        this.createEnemies();
         this.canvas.onmousemove = (event) => {
             const position = MouseUtils.getMousePos(this.canvas, event);
             this.spaceship.x = position.x;
             this.spaceship.y = position.y;
         }
 
-        this.actionsInterval = setInterval(this.executeEveryFrameActions.bind(this), 1000 / 60);
-        this.collisionsChecksInterval = setInterval(() => this.checkCollisions(), 5);
-        return this;
+        this.everyFrameActionsInterval = setInterval(
+            this.executeEveryFrameActions.bind(this),
+            1000 / this.framesPerSecond
+        );
+
+        try {
+            for (let i = 0; i < this.config.stages.length; i++) {
+                this.currentStage = new Stage(i + 1, this.config.stages[i], this.canvas, this.spaceship);
+                await this.currentStage.run();
+            }
+            this.gameOver('Congratulations! ', 'Earth is saved!');
+        } catch (error) {
+            this.gameOver(error.message);
+        }
     }
 
     executeEveryFrameActions() {
-        if (!this.pause) {
-            this.runMissilesActions();
-            this.runEnemiesActions();
-            this.runSpaceshipActions();
-
-            this.drawService.draw(
-                ...this.missiles,
-                ...this.enemies,
-                this.spaceship
-            );
-            this.drawService.drawText(`lives: ${this.spaceship.lives}`, {x: 400, y: 490});
-            //TODO this.drawService.drawText(`score: ${this.spaceship.lives}`, {x: 400, y: 490});
+        if (!this.pause && this.currentStage) {
+            this.currentStage.executeEveryFrameActions();
+            this.drawScreen();
             if (this.spaceship.lives <= 0) {
-                this.gameOver();
+                this.spaceship.shouldDraw = false;
+                this.gameOver('Your spaceship was destroyed...');
             }
         }
     }
 
-    runMissilesActions() {
-        // destroy missiles out of screen
-        this.missiles = this.missiles.filter(missile => missile.y > 0 && !missile.death);
-
-        // create new missiles
-        if (this.canCreateNewMissile()) {
-            const missile = new Missile(this.config.spaceship.missile);
-            missile.x = this.spaceship.x - 3; /* so it's aligned with ship*/
-            missile.y = this.spaceship.y;
-            this.missiles.push(missile);
-            this.lastMissileFiredTimeStamp = Date.now();
-        }
-        // moves missiles
-        this.missiles.forEach(missile => missile.y -= missile.speed);
+    drawScreen() {
+        this.drawService.draw(...this.currentStage.getElementsToDraw());
+        this.drawService.drawText(`Lives: ${this.spaceship.lives}`, {x: 420, y: 490});
+        this.drawService.drawText(`Score: ${this.spaceship.score}`, {x: 220, y: 490});
+        this.drawService.drawText(`Stage ${this.currentStage.number}`, {x: 20, y: 490});
     }
 
-    canCreateNewMissile() {
-        return this.lastMissileFiredTimeStamp + this.config.spaceship.missile.reloadTime < Date.now();
-    }
-
-    runEnemiesActions() {
-        this.enemies = this.enemies.filter(enemy => enemy.y < this.getStageHeight() + enemy.height && !enemy.death);
-        this.handleEnemiesMovement();
-    }
-
-
-    handleEnemiesMovement() {
-        this.enemies.forEach(enemy => {
-            if (enemy.y < enemy.height) {
-                enemy.y += enemy.speed;
-            } else {
-                const isAtLeftLimit = enemy.x < enemy.width;
-                const isAtRightLimit = enemy.x > this.getStageWidth() - enemy.width;
-                if (isAtRightLimit || isAtLeftLimit) {
-                    enemy.x = isAtLeftLimit ? enemy.width : this.getStageWidth() - enemy.width;
-                    enemy.speed = -enemy.speed;
-                    enemy.y += enemy.height;
-                }
-                enemy.x += enemy.speed;
-            }
-        })
-    }
-
-    getStageWidth() {
-        return ViewUtils.getWidth(this.canvas);
-    }
-
-    getStageHeight() {
-        return ViewUtils.getHeight(this.canvas);
-    }
-
-    isColliding(drawable1, drawable2) {
-        return this.context.isPointInPath(drawable1.path2D, drawable2.x - drawable1.x, drawable2.y - drawable1.y);
-    }
-
-    checkCollisions() {
-        // check enemies/missiles collisions
-        this.enemies
-            .filter(enemy => !enemy.death)
-            .forEach(enemy => {
-                this.missiles.forEach(missile => {
-                    if (this.isColliding(enemy, missile)) {
-                        enemy.death = true;
-                        missile.death = true;
-                    }
-                })
-                if (CollisionUtils.getCollisionPoints(this.spaceship).some(position => this.isColliding(enemy, position))
-                    && !this.spaceship.death && !this.isSpaceshipInSafePeriod()) {
-                    this.spaceship.death = true;
-                    enemy.death = true;
-                }
-            });
-    }
-
-    createEnemies() {
-        for (let i = 0; i < this.numberOfEnemies; i++) {
-            const enemy = new Enemy(this.config.enemy)
-            enemy.y = (-enemy.height * i * 1.5) - 200;
-            enemy.x = enemy.width * 2;
-            this.enemies.push(enemy);
-        }
-    }
-
-    runSpaceshipActions() {
-        if (this.isSpaceshipInSafePeriod()) {
-            //
-        } else if (this.spaceship.death) {
-            this.spaceship.lives--;
-            const blinkInterval = setInterval(
-                () => this.spaceship.shouldDraw = !this.spaceship.shouldDraw,
-                20
-            );
-            setTimeout(() => {
-                clearInterval(blinkInterval);
-                this.spaceship.shouldDraw = true;
-            }, this.config.spaceship.safeDeathPeriod);
-            console.log('lives', this.spaceship.lives);
-            this.spaceship.timeOfDeath = Date.now();
-            this.spaceship.death = false;
-        }
-
-    }
-
-    isSpaceshipInSafePeriod() {
-        return this.spaceship.timeOfDeath + this.config.spaceship.safeDeathPeriod > Date.now();
-    }
-
-    gameOver() {
-        clearInterval(this.actionsInterval);
-        clearInterval(this.collisionsChecksInterval);
-        this.drawService.drawText('Game over', {x: 120, y: 260}, 50);
+    gameOver(reason, gameOverText = 'Game over') {
+        this.drawScreen();
+        clearInterval(this.everyFrameActionsInterval);
+        setTimeout(() => this.drawService.drawText(reason, {x: 40, y: 220}, 30), 200);
+        setTimeout(() => this.drawService.drawText(gameOverText, {x: 120, y: 280}, 50), 1000);
     }
 }
