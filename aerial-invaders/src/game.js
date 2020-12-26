@@ -19,6 +19,7 @@ export default class Game {
     }
 
     async run() {
+        this.canvas.classList.add('in-game');
         this.spaceship = new Spaceship(this.config.spaceship);
         this.canvas.onmousemove = (event) => {
             const position = MouseUtils.getMousePos(this.canvas, event);
@@ -65,5 +66,14 @@ export default class Game {
         clearInterval(this.everyFrameActionsInterval);
         setTimeout(() => this.drawService.drawText(reason, {x: 40, y: 220}, 30), 200);
         setTimeout(() => this.drawService.drawText(gameOverText, {x: 120, y: 280}, 50), 1000);
+        setTimeout(() => {
+            this.canvas.classList.remove('in-game');
+            this.drawService.drawText('Retry?', {x: 190, y: 340}, 30);
+            const retry = () => {
+                this.canvas.removeEventListener('click', retry);
+                this.run();
+            }
+            this.canvas.addEventListener('click', retry);
+        }, 2000);
     }
 }
