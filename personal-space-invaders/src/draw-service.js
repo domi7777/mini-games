@@ -30,6 +30,12 @@ export default class DrawService {
     #draw(drawable) {
         this.context.fillStyle = drawable.color;
         this.context.translate(drawable.x, drawable.y);
+        if (drawable.config.path2DLeft && drawable.speed && drawable.speed < 0) {
+            drawable.path2D = drawable.config.path2DLeft;
+        }
+        if (drawable.config.path2DRight && drawable.speed && drawable.speed > 0) {
+            drawable.path2D = drawable.config.path2DRight;
+        }
         this.context.fill(drawable.path2D);
         this.#resetContextTransform();
     }

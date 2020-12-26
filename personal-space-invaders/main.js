@@ -10,9 +10,7 @@ const game = new Game(
     canvas,
     new DrawService(canvas)
 );
-game.run()
-    .then(() => console.log('Game finished.'))
-    .catch(error => console.error(error));
+game.run();
 
 console.log(game);
 

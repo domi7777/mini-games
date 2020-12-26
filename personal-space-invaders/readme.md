@@ -1,5 +1,5 @@
 #TODO
-- retry button
+
 
 ## Mobile bugs
 - lags

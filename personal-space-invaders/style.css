@@ -8,7 +8,6 @@ body {
     margin: 0;
     color: var(--first-color);
     background-color: var(--second-color);
-    font-family: 'Press Start 2P', cursive;
 }
 
 canvas#game {

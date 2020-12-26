@@ -18,7 +18,18 @@ export default class Game {
         document.onvisibilitychange = () => this.pause = document.hidden;
     }
 
-    async run() {
+    run() {
+        this.drawService.drawText('Protect your couch from the kitties at all costs!', {x: 20, y: 150});
+        this.drawService.drawText('Use your water gun but beware of the scratches.', {x: 20, y: 200});
+        setTimeout(() => this.drawService.drawText('Click here to start.', {x: 20, y: 250}, 30), 2000)
+        const startGame = () => {
+            this.canvas.removeEventListener('click', startGame);
+            this.start();
+        }
+        this.canvas.addEventListener('click', startGame);
+    }
+
+    async start() {
         this.canvas.classList.add('in-game');
         this.spaceship = new Spaceship(this.config.spaceship);
         this.canvas.onmousemove = (event) => {
@@ -37,7 +48,7 @@ export default class Game {
                 this.currentStage = new Stage(i + 1, this.config.stages[i], this.canvas, this.spaceship);
                 await this.currentStage.run();
             }
-            this.gameOver('Congratulations! ', 'Earth is saved!');
+            this.gameOver('Congratulations! ', 'Your couch is saved!');
         } catch (error) {
             this.gameOver(error.message);
         }
@@ -49,7 +60,7 @@ export default class Game {
             this.drawScreen();
             if (this.spaceship.lives <= 0) {
                 this.spaceship.shouldDraw = false;
-                this.gameOver('Your spaceship was destroyed...');
+                this.gameOver('Your hand was bitten too badly...');
             }
         }
     }
@@ -71,7 +82,7 @@ export default class Game {
             this.drawService.drawText('Retry?', {x: 190, y: 340}, 30);
             const retry = () => {
                 this.canvas.removeEventListener('click', retry);
-                this.run();
+                this.start();
             }
             this.canvas.addEventListener('click', retry);
         }, 2000);
