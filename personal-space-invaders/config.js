@@ -10,7 +10,7 @@ const spaceship = {
         path2D: new Path2D('m-0.45772,11.24997c0,0 -9.81268,-23.39996 0.5924,-23.39996c10.40509,0 -0.5924,23.39996 -0.5924,23.39996z'),
         color: '#0085dd',
         speed: 7,
-        reloadTime: 500
+        reloadTime: 550
     }
 };
 
