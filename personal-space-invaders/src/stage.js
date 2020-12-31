@@ -71,7 +71,7 @@ export default class Stage {
             this.resolvePromise();
         }
         if (this.enemies.some(enemy => enemy.y + enemy.height > this.#getStageHeight())) {
-            this.rejectPromise(new Error('Your couch was invaded by fur balls'));
+            this.rejectPromise(new Error('Your couch was invaded by furballs')); // TODO error class instead
         }
         this.#handleEnemiesMovement();
     }

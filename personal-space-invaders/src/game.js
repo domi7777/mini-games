@@ -1,6 +1,7 @@
 import Spaceship from "./spaceship.js"
 import MouseUtils from "./mouse-utils.js"
 import Stage from "./stage.js";
+import ViewUtils from "./view-utils.js";
 
 
 export default class Game {
@@ -31,13 +32,21 @@ export default class Game {
 
     async start() {
         this.canvas.classList.add('in-game');
-        this.spaceship = new Spaceship(this.config.spaceship);
+        this.spaceship = new Spaceship(
+            this.config.spaceship,
+            ViewUtils.getWidth(this.canvas) / 2,
+            ViewUtils.getHeight(this.canvas) / 2
+        );
         this.canvas.onmousemove = (event) => {
             const position = MouseUtils.getMousePos(this.canvas, event);
             this.spaceship.x = position.x;
             this.spaceship.y = position.y;
         }
-
+        this.canvas.ontouchmove = (event) => {
+            const position = MouseUtils.getMousePos(this.canvas, event.touches[0]);
+            this.spaceship.x = position.x;
+            this.spaceship.y = position.y;
+        }
         this.everyFrameActionsInterval = setInterval(
             this.executeEveryFrameActions.bind(this),
             1000 / this.framesPerSecond

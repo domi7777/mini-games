@@ -1,10 +1,16 @@
+# Personal space invaders
+Can you defeat the feline menace?
+
+## Stack:
+- es6
+- html
+- css
+
 #TODO
 
 
 ## Mobile bugs
-- lags
-- mouse != touch
-- size of canvas
+- size of canvas?
 
 ## Improvements
 - show high scores
