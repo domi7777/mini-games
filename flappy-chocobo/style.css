@@ -1,0 +1,27 @@
+body {
+    background-color: #2c3e50;
+    color: #C5C8C6;
+    padding: 25px;
+    font-family: 'Press Start 2P', cursive;
+    text-shadow: 3px 3px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    font-weight: lighter;
+    text-align: center;
+}
+
+a {
+    color: #e93250;
+}
+
+canvas {
+    border: 1px solid #7c8eA0;
+    background-image: url('images/Desert.PNG');
+    background-size: contain;
+}
+
+canvas:hover {
+    cursor: pointer;
+}
+
+.status {
+    text-align: center;
+}
