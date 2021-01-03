@@ -7,11 +7,11 @@ export default class DrawService {
     }
 
     get width() {
-        return ViewUtils.getHeight(this.canvas);
+        return ViewUtils.getWidth(this.canvas);
     }
 
     get height() {
-        return ViewUtils.getWidth(this.canvas);
+        return ViewUtils.getHeight(this.canvas);
     }
 
     draw(...drawables) {
@@ -24,7 +24,27 @@ export default class DrawService {
     drawText(text, position = {x: 10, y: 10}, size = 20) {
         this.context.fillStyle = 'White';
         this.context.font = `${size}px Arial`;
-        this.context.fillText(text, position.x, position.y);
+        this.#wrapText(text, position.x, position.y, this.width - 50,  size);
+    }
+
+    // credits: https://stackoverflow.com/a/27503574
+    #wrapText(text, x, y, maxWidth, lineHeight) {
+        const words = text.split(' ');
+        let line = '';
+
+        for (let n = 0; n < words.length; n++) {
+            const testLine = line + words[n] + ' ';
+            const metrics = this.context.measureText(testLine);
+            const testWidth = metrics.width;
+            if (testWidth > maxWidth && n > 0) {
+                this.context.fillText(line, x, y);
+                line = words[n] + ' ';
+                y += lineHeight;
+            } else {
+                line = testLine;
+            }
+        }
+        this.context.fillText(line, x, y);
     }
 
     #draw(drawable) {
@@ -43,4 +63,5 @@ export default class DrawService {
     #resetContextTransform() {
         this.context.setTransform(1, 0, 0, 1, 0, 0);
     }
+
 }

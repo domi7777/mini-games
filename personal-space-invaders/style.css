@@ -8,12 +8,12 @@ body {
     margin: 0;
     color: var(--first-color);
     background-color: var(--second-color);
+    text-align: center;
 }
 
 canvas#game {
     border: 1px solid #bababa;
-    margin-left: calc(50vw - 250px);
-    margin-top: calc(50vh - 250px);
+    margin: auto;
     background: rgb(2, 0, 36);
     background: linear-gradient(180deg, rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 55%, rgba(0, 155, 255, 1) 100%);
 }
