@@ -14,7 +14,7 @@ a {
 
 canvas {
     border: 1px solid #7c8eA0;
-    background-image: url('images/Desert.PNG');
+    background-image: url('images/desert.png');
     background-size: contain;
 }
 

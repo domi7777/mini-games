@@ -41,7 +41,7 @@ $(function(){
 
     var ground = {y: 450, x:0, width: 1000, height: 30, speed: {x: 0, y: 0}}; // invisible
 
-    var hero = new AnimatedImage ("images/choco.PNG", 100, -160, 140, 140, 0, 0);
+    var hero = new AnimatedImage ("images/choco.png", 100, -160, 140, 140, 0, 0);
     var obstacle = new AnimatedImage ("images/pampa.png", 1000, 250, 100, 100, -25, 0);
     var shapes = [obstacle, hero];
     var obstacles = [obstacle];
