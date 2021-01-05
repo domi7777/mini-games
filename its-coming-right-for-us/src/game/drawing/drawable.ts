@@ -1,4 +1,4 @@
-import {DrawableConfig} from "../config";
+import {DrawableConfig} from "../../config";
 
 export class Drawable {
     shouldDraw = true;

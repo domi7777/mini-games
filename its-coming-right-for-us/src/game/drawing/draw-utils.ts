@@ -1,5 +1,6 @@
 import {Drawable} from "./drawable";
-import {get2DContext, getHeight, getWidth} from "./global-functions";
+import {get2DContext, getHeight, getWidth} from "../global-functions";
+import {AnimatedDrawable} from "./animated-drawable";
 
 export abstract class DrawUtils { // TODO service
 
@@ -45,13 +46,43 @@ export abstract class DrawUtils { // TODO service
     }
 
     private static doDraw(drawable: Drawable) {
-        this.context.drawImage(
-            drawable.image,
-            drawable.x,
-            drawable.y,
-            drawable.width,
-            drawable.height
-        );
+
+        if (drawable instanceof AnimatedDrawable) {
+            console.log(drawable.currentFrameNumber)
+            this.context.drawImage(
+                drawable.image,
+                drawable.width * drawable.currentFrameNumber,
+                0,
+                drawable.width,
+                drawable.height,
+                drawable.x,
+                drawable.y,
+                drawable.width,
+                drawable.height
+            );
+        } else {
+            this.context.drawImage(
+                drawable.image,
+                drawable.x,
+                drawable.y,
+                drawable.width,
+                drawable.height
+            );
+        }
+
+
+        // if (iobj.source != null)
+        //     context.drawImage(
+        //     iobj.source,
+        //     iobj.current * iobj.width,
+        //     0,
+        //     iobj.width,
+        //     iobj.height,
+        //     x,
+        //     y,
+        //     iobj.width,
+        //     iobj.height);
+        // iobj.current = (iobj.current + 1) % iobj.total_frames;
 
 
         // this.context.fillStyle = drawable.color;

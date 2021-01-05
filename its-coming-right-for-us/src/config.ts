@@ -1,13 +1,23 @@
+import {Direction} from "./game/drawing/direction.enum";
+
+export interface AnimatedDrawableConfig extends DrawableConfig {
+    numberOfFrames: number;
+    frames: {
+        [Direction.right]: number [];
+        [Direction.left]: number [];
+    }
+}
+
 export interface DrawableConfig {
     x: number,
     y: number,
     width: number,
     height: number,
     image: any; // TODO not sure
-    frames: number; // animated... fixme
 }
 
-export interface EnemyConfig extends DrawableConfig {
+export interface EnemyConfig extends AnimatedDrawableConfig {
+    speed: number;
 }
 
 export interface StageConfig {
@@ -27,13 +37,18 @@ export interface GameConfig {
 
 const stages: StageConfig[] = [
     {
-        numberOfEnemies: 10,
+        numberOfEnemies: 1,
         enemy: {
+            speed: 4,
             image: require('../images/pink-duck.png'),
-            frames: 8,
-            x: 0,
-            y: 0,
-            width: 314,
+            numberOfFrames: 8,
+            frames: {
+                [Direction.left]: [4, 7], // first frame = 0
+                [Direction.right]: [5, 6]
+            },
+            x: 100,
+            y: 100,
+            width: 38,
             height: 38
         }
     }

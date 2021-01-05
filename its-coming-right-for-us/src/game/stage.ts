@@ -1,7 +1,8 @@
 import {StageConfig} from "../config";
-import {get2DContext, getCanvas} from "./global-functions";
-import {Drawable} from "./drawable";
+import {get2DContext, getCanvas, getWidth} from "./global-functions";
+import {Drawable} from "./drawing/drawable";
 import {Enemy} from "./enemy";
+import {Direction} from "./drawing/direction.enum";
 
 export class Stage {
 
@@ -34,6 +35,23 @@ export class Stage {
     }
 
     executeEveryFrameActions() {
+        this.enemies.forEach(enemy => {
+            if (enemy.y < enemy.height) {
+                enemy.y += enemy.speed;
+            } else {
+                const isAtLeftLimit = enemy.x < enemy.width;
+                const isAtRightLimit = enemy.x > getWidth() - enemy.width;
+
+                if (isAtRightLimit || isAtLeftLimit) {
+                    enemy.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
+                    enemy.x = isAtLeftLimit ? enemy.width : getWidth() - enemy.width;
+                    enemy.speed = -enemy.speed;
+                    enemy.y += enemy.height;
+                }
+                enemy.x += enemy.speed;
+            }
+        });
+
         // this.#runMissilesActions();
         // this.#runEnemiesActions();
         // this.#runSpaceshipActions();

@@ -1,7 +1,8 @@
 import {config} from "../config";
 import {getCanvas, getHeight, getWidth} from "./global-functions";
 import {Stage} from "./stage";
-import {DrawUtils} from "./draw-utils";
+import {DrawUtils} from "./drawing/draw-utils";
+import {AnimatedDrawable} from "./drawing/animated-drawable";
 
 export class Game {
     private pause = false;
@@ -11,6 +12,7 @@ export class Game {
     private config = config;
     private everyFrameActionsInterval?: NodeJS.Timeout;
     private framesPerSecond = 30;
+    private currentFrame = 0;
     private currentStage?: Stage;
 
     constructor() {
@@ -48,6 +50,7 @@ export class Game {
 
     executeEveryFrameActions(): void {
         if (!this.pause && this.currentStage) {
+            this.currentFrame++;
             this.currentStage.executeEveryFrameActions();
             this.drawScreen();
             // if (this.spaceship.lives <= 0) {
@@ -57,9 +60,21 @@ export class Game {
         }
     }
 
+    // 30 fps => called 30 per s
+    // 4fps => 4 per s
+
     drawScreen() {
         if (this.currentStage) {
-            DrawUtils.draw(...this.currentStage.getElementsToDraw());
+            const elementsToDraw = this.currentStage.getElementsToDraw();
+            elementsToDraw
+                .filter(element => element instanceof AnimatedDrawable)
+                .forEach(element => {
+                    const drawable = element as AnimatedDrawable;
+                    if (this.currentFrame % drawable.fps === 0) {
+                        drawable.setNextFrameNumber();
+                    }
+                })
+            DrawUtils.draw(...elementsToDraw);
             this.drawHUD();
         }
     }
@@ -69,7 +84,10 @@ export class Game {
         const fontFamily = this.config.text.fontFamily;
         const fontColor = this.config.text.fontColor;
         const y = this.height - fontSize;
-        DrawUtils.drawText(`Stage ${this.currentStage?.stageNumber}`, {x: 5, y: fontSize + 5}, fontSize, fontColor, fontFamily);
+        DrawUtils.drawText(`Stage ${this.currentStage?.stageNumber}`, {
+            x: 5,
+            y: fontSize + 5
+        }, fontSize, fontColor, fontFamily);
         // DrawUtils.drawText(`Score: ${this.spaceship.score}`, {x: (this.width / 2) - 30, y: y}, fontSize);
         // DrawUtils.drawText(`Lives: ${this.spaceship.lives}`, {x: this.width - 80, y: y}, fontSize);
     }
