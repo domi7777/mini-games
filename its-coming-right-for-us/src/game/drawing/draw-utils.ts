@@ -48,7 +48,6 @@ export abstract class DrawUtils { // TODO service
     private static doDraw(drawable: Drawable) {
 
         if (drawable instanceof AnimatedDrawable) {
-            console.log(drawable.currentFrameNumber)
             this.context.drawImage(
                 drawable.image,
                 drawable.width * drawable.currentFrameNumber,
