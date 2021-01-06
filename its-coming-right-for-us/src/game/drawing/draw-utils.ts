@@ -1,6 +1,7 @@
 import {Drawable} from "./drawable";
-import {get2DContext, getHeight, getWidth} from "../global-functions";
+import {get2DContext, getCanvas, getHeight, getWidth} from "../global-functions";
 import {AnimatedDrawable} from "./animated-drawable";
+import {Direction} from "./direction.enum";
 
 export abstract class DrawUtils { // TODO service
 
@@ -48,17 +49,30 @@ export abstract class DrawUtils { // TODO service
     private static doDraw(drawable: Drawable) {
 
         if (drawable instanceof AnimatedDrawable) {
+            /*
+* duck hunt sprites:
+* normal duck: 3 frames
+* y: starts at 117px, height: 32px
+* x: starts at 0, width: 38px
+ */
+            const isReverse = drawable.direction === Direction.left;
+            if (isReverse) {
+                this.context.save();
+                this.context.translate(getCanvas().width, 0);
+                this.context.scale(-1, 1);
+            }
             this.context.drawImage(
                 drawable.image,
-                drawable.width * drawable.currentFrameNumber,
-                0,
+                drawable.spriteStartingPoint.x + (drawable.width * drawable.currentFrameNumber),
+                drawable.spriteStartingPoint.y,
                 drawable.width,
                 drawable.height,
-                drawable.x,
+                isReverse ? getCanvas().width - drawable.x : drawable.x,
                 drawable.y,
                 drawable.width,
                 drawable.height
             );
+            this.context.restore();
         } else {
             this.context.drawImage(
                 drawable.image,

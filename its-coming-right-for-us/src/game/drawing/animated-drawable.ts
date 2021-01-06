@@ -1,36 +1,33 @@
 import {AnimatedDrawableConfig} from "../../config";
 import {Drawable} from "./drawable";
 import {Direction} from "./direction.enum";
+import {Point} from "./point";
 
 export class AnimatedDrawable extends Drawable {
     currentFrameNumber = 0;
-    fps = 7; //fixme
+    fps = 13; //fixme
     totalNumberOfFrames: number;
     direction = Direction.right;
-    frames: {
-        [Direction.right]: number[];
-        [Direction.left]: number[]
-    };
+    lastFrameChangeTime = 0;
+    timeBetweenFrameChange: number;
+    spriteStartingPoint: Point;
 
     constructor(config: AnimatedDrawableConfig) {
         super(config);
         this.totalNumberOfFrames = config.numberOfFrames;
-        this.frames = config.frames;
-        this.currentFrameNumber = this.frames[this.direction][0];
+        this.timeBetweenFrameChange = config.timeBetweenFrameChange;
+        this.spriteStartingPoint = config.spriteStartingPoint;
     }
 
     setDirection(direction: Direction) {
         this.direction = direction;
-        this.currentFrameNumber = this.frames[this.direction][0];
     }
 
     setNextFrameNumber(): void {
-        const frames = this.frames[this.direction];
-        if (this.currentFrameNumber === frames[frames.length - 1]) {
-            this.currentFrameNumber = frames[0];
+        if (this.currentFrameNumber === this.totalNumberOfFrames - 1) {
+            this.currentFrameNumber = 0;
         } else {
-            this.currentFrameNumber = frames[1] // fixme if more than 2 frames
-            this.currentFrameNumber = frames[1] // fixme if more than 2 frames
+            this.currentFrameNumber++;
         }
     }
 }
