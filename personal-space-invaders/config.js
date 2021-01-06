@@ -49,15 +49,15 @@ const stages = [
         numberOfEnemies: 25
     },
     {
-        enemy: {...defaultEnemyConfig, color: '#be8f00', speed: 5},
+        enemy: {...defaultEnemyConfig, color: '#be8f00', speed: 4},
         numberOfEnemies: 30
     },
     {
-        enemy: {...defaultEnemyConfig, color: '#7e7e7e', speed: 5},
+        enemy: {...defaultEnemyConfig, color: '#7e7e7e', speed: 4},
         numberOfEnemies: 30
     },
     {
-        enemy: {...defaultEnemyConfig, color: '#000000', speed: 5.5},
+        enemy: {...defaultEnemyConfig, color: '#000000', speed: 4.5},
         numberOfEnemies: 30
     }
 ]

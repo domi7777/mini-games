@@ -1,4 +1,4 @@
-# Personal space invaders
+# [Personal space invaders](https://github.com/domi7777/mini-games/tree/master/personal-space-invaders)
 Can you defeat the feline menace?
 
 ## Stack:
@@ -8,9 +8,6 @@ Can you defeat the feline menace?
 
 #TODO
 
-
-## Mobile bugs
-- size of canvas?
 
 ## Improvements
 - show high scores
