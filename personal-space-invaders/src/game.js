@@ -5,12 +5,10 @@ import ViewUtils from "./view-utils.js";
 
 
 export default class Game {
-    framesPerSecond = 60;
     pause = false;
     spaceship;
     currentStage;
-
-    everyFrameActionsInterval;
+    running = false;
 
     constructor(config, canvas, drawService) {
         this.config = config;
@@ -39,6 +37,7 @@ export default class Game {
     }
 
     async start() {
+        this.running = true;
         this.canvas.classList.add('in-game');
         this.spaceship = new Spaceship(
             this.config.spaceship,
@@ -55,10 +54,9 @@ export default class Game {
             this.spaceship.x = position.x;
             this.spaceship.y = position.y;
         }
-        this.everyFrameActionsInterval = setInterval(
-            this.executeEveryFrameActions.bind(this),
-            1000 / this.framesPerSecond
-        );
+        window.requestAnimationFrame(
+            this.executeEveryFrameActions.bind(this)
+        )
 
         try {
             for (let i = 0; i < this.config.stages.length; i++) {
@@ -71,14 +69,17 @@ export default class Game {
         }
     }
 
-    executeEveryFrameActions() {
-        if (!this.pause && this.currentStage) {
+    executeEveryFrameActions(time) {
+        if (!this.pause && this.currentStage && this.running) {
             this.currentStage.executeEveryFrameActions();
             this.drawScreen();
             if (this.spaceship.lives <= 0) {
                 this.spaceship.shouldDraw = false;
                 this.gameOver('Your hand was bitten too badly...');
             }
+            window.requestAnimationFrame(
+                this.executeEveryFrameActions.bind(this)
+            )
         }
     }
 
@@ -97,7 +98,7 @@ export default class Game {
 
     gameOver(reason, gameOverText = 'Game over') {
         this.drawScreen();
-        clearInterval(this.everyFrameActionsInterval);
+        this.running = false;
         setTimeout(() => this.drawService.drawText(reason, {x: 40, y: 220}, 30), 200);
         setTimeout(() => this.drawService.drawText(gameOverText, {x: 40, y: 300}, 50), 1000);
         setTimeout(() => {
