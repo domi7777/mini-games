@@ -9,6 +9,10 @@
 - css
 
 #TODO
+crosshair precision
+stages
+scrore
+game over
 
 
 ## Improvements
