@@ -24,7 +24,7 @@ export class Game {
 
     async start() {
         this.running = true;
-        console.log('starting game3');
+        console.log('starting game');
         this.canvas.classList.add('in-game');
 
         this.listenOnUserInputs();
