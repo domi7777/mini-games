@@ -1,14 +1,12 @@
-import {Direction} from "./game/drawing/direction.enum";
 import {Point} from "./game/drawing/point";
+
+const sprites = require('../images/duck-hunt-sprites.png');
+const crosshair = require('../images/crosshair.png')
 
 export interface AnimatedDrawableConfig extends DrawableConfig {
     numberOfFrames: number;
     timeBetweenFrameChange: number;
     spriteStartingPoint: Point;
-    frames: {
-        [Direction.right]: number [];
-        [Direction.left]: number [];
-    }
 }
 
 export interface DrawableConfig {
@@ -38,34 +36,35 @@ export interface GameConfig {
     stages: StageConfig[]
 }
 
-/*
-* duck hunt sprites:
-* normal duck: 3 frames
-* y: starts at 117px, height: 32px
-* x: starts at 0, width: 38px
- */
-const sprites = require('../images/duck-hunt-sprites.png');
-const crosshair = require('../images/crosshair.png')
+const spriteStartingPoints = {
+    purpleDuck: {x: 0, y: 117},
+    greenDuck: {x: 129, y: 117}
+}
+const defaultDuckConfig = {
+    speed: 2,
+    image: sprites,
+    timeBetweenFrameChange: 200,
+    numberOfFrames: 3,
+    x: 50,
+    y: 50,
+    width: 40,
+    height: 31
+}
 
 
 const stages: StageConfig[] = [
     {
-        numberOfEnemies: 1,
+        numberOfEnemies: 7,
         enemy: {
-            speed: 2,
-            image: sprites,
-            timeBetweenFrameChange: 200,
-            numberOfFrames: 3,
-            spriteStartingPoint: {x: 0, y: 117},
-            frames: {
-                [Direction.left]: [4, 7], // first frame = 0
-                [Direction.right]: [5, 6],
-
-            },
-            x: 50,
-            y: 50,
-            width: 40,
-            height: 31
+            ...defaultDuckConfig,
+            spriteStartingPoint: spriteStartingPoints.purpleDuck,
+        }
+    },
+    {
+        numberOfEnemies: 9,
+        enemy: {
+            ...defaultDuckConfig,
+            spriteStartingPoint: spriteStartingPoints.greenDuck,
         }
     }
 ];
