@@ -4,6 +4,7 @@ import {AnimatedDrawable} from "./drawing/animated-drawable";
 export class Enemy extends AnimatedDrawable {
     speed: number;
     death = false;
+    falling = false;
 
     constructor(public enemyConfig: EnemyConfig) {
         super(enemyConfig);

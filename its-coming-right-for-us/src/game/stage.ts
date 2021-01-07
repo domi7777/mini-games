@@ -1,10 +1,11 @@
 import {StageConfig} from "../config";
-import {get2DContext, getCanvas, getWidth} from "./global-functions";
+import {get2DContext, getCanvas, getHeight, getWidth} from "./global-functions";
 import {Drawable} from "./drawing/drawable";
 import {Enemy} from "./enemy";
 import {Direction} from "./drawing/direction.enum";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {Point} from "./drawing/point";
+import {CollisionUtils} from "./collision-utils";
 
 export class Stage {
 
@@ -34,28 +35,45 @@ export class Stage {
     }
 
     executeEveryFrameActions() {
-        this.enemies.forEach(enemy => {
-            // TODO movment
-            if (enemy.y < enemy.height) {
-                enemy.y += enemy.speed;
-            } else {
-                const isAtLeftLimit = enemy.x < enemy.width / 2;
-                const isAtRightLimit = enemy.x > getWidth() - enemy.width / 2;
+        this.handleEnemiesMovment();
+        this.handleEnemiesDeaths();
 
-                if (isAtRightLimit || isAtLeftLimit) {
-                    enemy.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
-                    enemy.x = isAtLeftLimit ? enemy.width : getWidth() - enemy.width;
-                    enemy.speed = -enemy.speed;
-                    enemy.y += enemy.height;
-                }
-                enemy.x += enemy.speed;
+        if (this.enemies.length === 0) {
+            if(!this.resolvePromise) {
+                throw new Error('no this.resolvePromise')
             }
-        });
+            this.resolvePromise(`Stage ${this.stageNumber} completed!`);
+        }
+    }
 
-        // this.#runMissilesActions();
-        // this.#runEnemiesActions();
-        // this.#runSpaceshipActions();
-        // this.#checkCollisions();
+    private handleEnemiesMovment() {
+        this.enemies
+            .filter(enemy => !enemy.death)
+            .forEach(enemy => {
+                // TODO change movment
+                if (enemy.y < enemy.height) {
+                    enemy.y += enemy.speed;
+                } else {
+                    const isAtLeftLimit = enemy.x < enemy.width / 2;
+                    const isAtRightLimit = enemy.x > getWidth() - enemy.width / 2;
+
+                    if (isAtRightLimit || isAtLeftLimit) {
+                        enemy.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
+                        enemy.x = isAtLeftLimit ? enemy.width : getWidth() - enemy.width;
+                        enemy.speed = -enemy.speed;
+                        enemy.y += enemy.height;
+                    }
+                    enemy.x += enemy.speed;
+                }
+            });
+        this.enemies
+            .filter(enemy => enemy.death && enemy.falling)
+            .forEach(enemy => {
+                enemy.y += 5;
+                if (enemy.y > getHeight() - 130) {
+                    this.enemies.splice(this.enemies.indexOf(enemy), 1);
+                }
+            }); // todo configurable
     }
 
     getElementsToDraw(): Drawable[] {
@@ -66,15 +84,11 @@ export class Stage {
         ];
     }
 
-    shoot(position: Point) {
+    shoot(point: Point) {
+        console.log('shoot', point)
         this.enemies
-            .filter(enemy => !enemy.death)
-            .forEach(enemy => {
-                // TODO
-                // if (this.isColliding(enemy, position)) {
-                //     this.destroyEnemy(enemy);
-                // }
-            })
+            .filter(enemy => !enemy.death && CollisionUtils.isPointInDrawableBounds(point, enemy))
+            .forEach(enemy => this.destroyEnemy(enemy));
     }
 
 
@@ -99,18 +113,34 @@ export class Stage {
     // }
     //
 
-    createEnemies() {
+    private createEnemies() {
         for (let i = 0; i < this.config.numberOfEnemies; i++) {
             const enemy = new Enemy(this.config.enemy)
-            // enemy.y = (-enemy.height * i * 1.5) - 200;
-            // enemy.x = enemy.width * 2;
+            enemy.y = (enemy.height * i * 1.5) - 200;
+            enemy.x = enemy.width * i * 5;
             this.enemies.push(enemy);
         }
     }
 
 
-    destroyEnemy(enemy: Enemy) {
+    private destroyEnemy(enemy: Enemy) {
+        console.log('destroy enemy')
         enemy.death = true;
         //TODO this.spaceship.score += enemy.scoreValue;
+        enemy.spriteStartingPoint.y = 236; // fixme configurable
+        enemy.totalNumberOfFrames = 1;
+        enemy.currentFrameNumber = 0;
+        setTimeout(() => {
+            enemy.falling = true;
+            enemy.spriteStartingPoint.x = 40; // fixme configurable
+        },250)
+    }
+
+    private handleEnemiesDeaths() {
+        // this.enemies = this.enemies
+        //     .filter(enemy => enemy.death)
+        //     .forEach(enemy => {
+        //
+        //     })
     }
 }

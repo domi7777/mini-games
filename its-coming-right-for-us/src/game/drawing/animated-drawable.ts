@@ -5,18 +5,18 @@ import {Point} from "./point";
 
 export class AnimatedDrawable extends Drawable {
     currentFrameNumber = 0;
-    fps = 13; //fixme
-    totalNumberOfFrames: number;
-    direction = Direction.right;
-    lastFrameChangeTime = 0;
-    timeBetweenFrameChange: number;
     spriteStartingPoint: Point;
+    totalNumberOfFrames: number;
+    lastFrameChangeTime = 0;
+    fps = 13; //fixme
+    direction = Direction.right;
+    timeBetweenFrameChange: number;
 
     constructor(config: AnimatedDrawableConfig) {
         super(config);
         this.totalNumberOfFrames = config.numberOfFrames;
         this.timeBetweenFrameChange = config.timeBetweenFrameChange;
-        this.spriteStartingPoint = config.spriteStartingPoint;
+        this.spriteStartingPoint = {...config.spriteStartingPoint};
     }
 
     setDirection(direction: Direction) {
