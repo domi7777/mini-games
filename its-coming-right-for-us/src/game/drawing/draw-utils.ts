@@ -3,7 +3,7 @@ import {get2DContext, getCanvas, getHeight, getWidth} from "../global-functions"
 import {AnimatedDrawable} from "../animations/animated-drawable";
 import {Direction} from "./direction.enum";
 
-export abstract class DrawUtils { // TODO service
+export abstract class DrawUtils {
 
     static context = get2DContext();
     static width = getWidth();
@@ -60,8 +60,8 @@ export abstract class DrawUtils { // TODO service
                 drawable.getCurrentAnimation().y,
                 drawable.width,
                 drawable.height,
-                isReverse ? getCanvas().width - drawable.x : drawable.x,
-                drawable.y,
+                isReverse ? getCanvas().width - drawable.x - drawable.width / 2 : drawable.x + drawable.width / 2,
+                drawable.y + drawable.height / 2,
                 drawable.width,
                 drawable.height
             );

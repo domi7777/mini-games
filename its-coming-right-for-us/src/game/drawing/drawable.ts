@@ -1,5 +1,5 @@
-import {DrawableConfig} from "../../config";
 import {Point} from "./point";
+import {DrawableConfig} from "./drawable-config";
 
 export abstract class Drawable {
     shouldDraw = true;

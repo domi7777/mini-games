@@ -1,6 +1,6 @@
-import {EnemyConfig} from "../config";
-import {AnimatedDrawable} from "./animations/animated-drawable";
-import {AnimationType} from "./animations/animation-type.enum";
+import {AnimatedDrawable} from "../animations/animated-drawable";
+import {AnimationType} from "../animations/animation-type.enum";
+import {EnemyConfig} from "./enemy-config";
 
 export abstract class Enemy extends AnimatedDrawable {
     speed: number;

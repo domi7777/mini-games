@@ -1,4 +1,3 @@
-import {config} from "../config";
 import {getCanvas, getHeight, getWidth} from "./global-functions";
 import {Stage} from "./stage";
 import {DrawUtils} from "./drawing/draw-utils";
@@ -6,19 +5,19 @@ import {AnimatedDrawable} from "./animations/animated-drawable";
 import {Point} from "./drawing/point";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {AnimationUtils} from "./animations/animation-utils";
+import {GameConfig} from "./config/game-config";
 
 export class Game {
     private pause = false;
     private canvas = getCanvas();
     private height = getHeight();
     private width = getWidth();
-    private config = config;
     private currentTime = 0;
     private currentStage?: Stage;
     private running = false;
     private shootingCrosshair: ShootingCrosshair;
 
-    constructor() {
+    constructor(private config: GameConfig) {
         document.onvisibilitychange = () => this.pause = document.hidden;
         this.shootingCrosshair = new ShootingCrosshair(this.config.shootingCrosshair)
     }
@@ -32,7 +31,12 @@ export class Game {
         window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
         try {
             for (let i = 0; i < this.config.stages.length; i++) {
-                this.currentStage = new Stage(i + 1, this.config.stages[i], this.shootingCrosshair);
+                this.currentStage = new Stage(
+                    i + 1,
+                    this.config.stages[i],
+                    this.config.grassHeight,
+                    this.shootingCrosshair
+                );
                 await this.currentStage.run();
             }
             // this.gameOver('Congratulations! ', 'Your couch is saved!');
@@ -42,11 +46,11 @@ export class Game {
     }
 
     private listenOnUserInputs() {
-        this.canvas.onmousemove = event => this.shootingCrosshair.position = this.getMousePos(event);
-        this.canvas.ontouchmove = event => this.shootingCrosshair.position = this.getMousePos(event.touches[0]);
+        this.canvas.onmousemove = event => this.shootingCrosshair.setPosition(this.getMousePos(event));
+        this.canvas.ontouchmove = event => this.shootingCrosshair.setPosition(this.getMousePos(event.touches[0]));
         // this.canvas.ontouchstart = (event) // TODO
         this.canvas.onclick = (event: MouseEvent) => {
-            this.shootingCrosshair.position = this.getMousePos(event);
+            this.shootingCrosshair.setPosition(this.getMousePos(event));
             this.currentStage?.shoot(this.shootingCrosshair.position);
         }
     }

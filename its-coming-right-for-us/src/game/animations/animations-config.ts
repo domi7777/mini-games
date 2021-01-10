@@ -1,6 +1,5 @@
-import {Point} from "./game/drawing/point";
-import {AnimationType} from "./game/animations/animation-type.enum";
-
+import {Point} from "../drawing/point";
+import {AnimationType} from "./animation-type.enum";
 
 export interface AnimationConfig extends Point {
     frames: number;
@@ -11,6 +10,8 @@ export interface AbstractAnimationsConfig {
 }
 
 export interface DuckAnimationsConfig extends AbstractAnimationsConfig {
+    timeBetweenDeathAndFallTime: number;
+    fallingSpeed: number;
     [AnimationType.horizontal]: AnimationConfig;
     [AnimationType.diagonal]: AnimationConfig;
     [AnimationType.vertical]: AnimationConfig;
@@ -23,10 +24,14 @@ export type AnimationsConfig = {
     greenDuck: DuckAnimationsConfig;
     brownDuck: DuckAnimationsConfig;
 }
-const timeBetweenDuckFrameChange = 200;
+const defaultConfig = {
+    timeBetweenFrameChange: 200,
+    timeBetweenDeathAndFallTime: 350,
+    fallingSpeed: 4
+}
 export const animationsConfig: AnimationsConfig = {
     purpleDuck: {
-        timeBetweenFrameChange: timeBetweenDuckFrameChange,
+        ...defaultConfig,
         [AnimationType.horizontal]: {frames: 3, x: 0, y: 117},
         [AnimationType.diagonal]: {frames: 3, x: 0, y: 156},
         [AnimationType.vertical]: {frames: 3, x: 0, y: 199},
@@ -34,7 +39,7 @@ export const animationsConfig: AnimationsConfig = {
         [AnimationType.fall]: {frames: 1, x: 40, y: 236},
     },
     greenDuck: {
-        timeBetweenFrameChange:timeBetweenDuckFrameChange,
+        ...defaultConfig,
         [AnimationType.horizontal]: {frames: 3, x: 130, y: 117},
         [AnimationType.diagonal]: {frames: 3, x: 130, y: 156},
         [AnimationType.vertical]: {frames: 3, x: 130, y: 199},
@@ -42,7 +47,7 @@ export const animationsConfig: AnimationsConfig = {
         [AnimationType.fall]: {frames: 1, x: 170, y: 236},
     },
     brownDuck: {
-        timeBetweenFrameChange: timeBetweenDuckFrameChange,
+        ...defaultConfig,
         [AnimationType.horizontal]: {frames: 3, x: 260, y: 117},
         [AnimationType.diagonal]: {frames: 3, x: 260, y: 156},
         [AnimationType.vertical]: {frames: 3, x: 260, y: 199},

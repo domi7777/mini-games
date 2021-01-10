@@ -1,13 +1,12 @@
-import {StageConfig} from "../config";
 import {get2DContext, getCanvas, getHeight, getWidth} from "./global-functions";
 import {Drawable} from "./drawing/drawable";
-import {Enemy} from "./enemy";
 import {Direction} from "./drawing/direction.enum";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {Point} from "./drawing/point";
 import {CollisionUtils} from "./collision-utils";
 import {AnimationType} from "./animations/animation-type.enum";
-import {Duck} from "./duck";
+import {Duck} from "./enemy/duck";
+import {StageConfig} from "./config/stages-config";
 
 export class Stage {
 
@@ -16,11 +15,11 @@ export class Stage {
     private resolvePromise?: (value: unknown) => void;
     private rejectPromise?: (reason?: any) => void;
 
-    enemies: Enemy[] = [];
-    lastMissileFiredTimeStamp = Date.now();
+    ducks: Duck[] = [];
 
     constructor(public stageNumber: number,
                 private config: StageConfig,
+                private grassHeight: number,
                 private shootingCrosshair: ShootingCrosshair) {
         this.canvas = getCanvas();
         this.context = get2DContext()
@@ -38,7 +37,7 @@ export class Stage {
 
     executeEveryFrameActions() {
         this.handleEnemiesMovment();
-        if (this.enemies.length === 0) {
+        if (this.ducks.length === 0) {
             if (!this.resolvePromise) {
                 throw new Error('no this.resolvePromise')
             }
@@ -47,47 +46,48 @@ export class Stage {
     }
 
     private handleEnemiesMovment() {
-        this.enemies
-            .filter(enemy => !enemy.death)
-            .forEach(enemy => {
+        this.ducks
+            .filter(duck => !duck.death)
+            .forEach(duck => {
                 // TODO change movment
-                if (enemy.y < enemy.height) {
-                    enemy.y += enemy.speed;
+                if (duck.y < duck.height) {
+                    duck.y += duck.speed;
                 } else {
-                    const isAtLeftLimit = enemy.x < enemy.width / 2;
-                    const isAtRightLimit = enemy.x > getWidth() - enemy.width / 2;
+                    const isAtLeftLimit = duck.x < duck.width / 2;
+                    const isAtRightLimit = duck.x > getWidth() - duck.width / 2;
 
                     if (isAtRightLimit || isAtLeftLimit) {
-                        enemy.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
-                        enemy.x = isAtLeftLimit ? enemy.width : getWidth() - enemy.width;
-                        enemy.speed = -enemy.speed;
-                        enemy.y += enemy.height;
+                        duck.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
+                        duck.x = isAtLeftLimit ? duck.width : getWidth() - duck.width;
+                        duck.speed = -duck.speed;
+                        duck.y += duck.height;
                     }
-                    enemy.x += enemy.speed;
+                    duck.x += duck.speed;
                 }
             });
-        this.enemies
-            .filter(enemy => enemy.death && enemy.falling)
-            .forEach(enemy => {
-                enemy.y += 5;
-                if (enemy.y > getHeight() - 130) {
-                    this.enemies.splice(this.enemies.indexOf(enemy), 1);
+        this.ducks
+            .filter(duck => duck.death && duck.falling)
+            .forEach(duck => {
+                duck.y += duck.animations.fallingSpeed;
+                if (duck.y > getHeight() - this.grassHeight) {
+                    this.ducks.splice(this.ducks.indexOf(duck), 1);
                 }
-            }); // todo configurable
+            });
     }
 
     getElementsToDraw(): Drawable[] {
         return [
-            ...this.enemies,
+            ...this.ducks,
             this.shootingCrosshair
         ];
     }
 
     shoot(point: Point) {
-        //console.log('shoot', point)
-        this.enemies
-            .filter(enemy => !enemy.death && CollisionUtils.isPointInDrawableBounds(point, enemy))
-            .forEach(enemy => this.destroyEnemy(enemy));
+        // console.log('shoot', point)
+        const duck = this.ducks.find(duck => !duck.death && CollisionUtils.isPointInDrawableBounds(point, duck));
+        if (duck) {
+            this.destroyEnemy(duck)
+        }
     }
 
     private createEnemies() { // TODO refactor to create enemies once at a time (config)
@@ -95,20 +95,19 @@ export class Stage {
             const enemy = new Duck(this.config.enemy, AnimationType.horizontal)
             enemy.y = (enemy.height * i * 1.5) - 200;
             enemy.x = enemy.width * i * 5;
-            this.enemies.push(enemy);
+            this.ducks.push(enemy);
         }
     }
 
 
-    private destroyEnemy(enemy: Enemy) {
-        console.log('destroy enemy')
-        enemy.death = true;
-        //TODO this.spaceship.score += enemy.scoreValue;
-        enemy.setAnimation(AnimationType.death);
+    private destroyEnemy(duck: Duck) {
+        duck.death = true;
+        //TODO this.spaceship.score += duck.scoreValue;
+        duck.setAnimation(AnimationType.death);
         setTimeout(() => {
-            enemy.falling = true;
-            enemy.setAnimation(AnimationType.fall)
-        }, 350/*TODO configurable*/)
+            duck.falling = true;
+            duck.setAnimation(AnimationType.fall)
+        }, duck.animations.timeBetweenDeathAndFallTime)
     }
 
 }
