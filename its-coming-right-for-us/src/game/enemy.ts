@@ -1,13 +1,14 @@
 import {EnemyConfig} from "../config";
-import {AnimatedDrawable} from "./drawing/animated-drawable";
+import {AnimatedDrawable} from "./animations/animated-drawable";
+import {AnimationType} from "./animations/animation-type.enum";
 
-export class Enemy extends AnimatedDrawable {
+export abstract class Enemy extends AnimatedDrawable {
     speed: number;
     death = false;
     falling = false;
 
-    constructor(public enemyConfig: EnemyConfig) {
-        super(enemyConfig);
+    protected constructor(public enemyConfig: EnemyConfig, animationType: AnimationType) {
+        super(enemyConfig, animationType);
         this.speed = enemyConfig.speed;
     }
 }

@@ -1,6 +1,6 @@
 import {Drawable} from "./drawable";
 import {get2DContext, getCanvas, getHeight, getWidth} from "../global-functions";
-import {AnimatedDrawable} from "./animated-drawable";
+import {AnimatedDrawable} from "../animations/animated-drawable";
 import {Direction} from "./direction.enum";
 
 export abstract class DrawUtils { // TODO service
@@ -47,14 +47,7 @@ export abstract class DrawUtils { // TODO service
     }
 
     private static doDraw(drawable: Drawable) {
-
         if (drawable instanceof AnimatedDrawable) {
-            /*
-* duck hunt sprites:
-* normal duck: 3 frames
-* y: starts at 117px, height: 32px
-* x: starts at 0, width: 38px
- */
             const isReverse = drawable.direction === Direction.left;
             if (isReverse) {
                 this.context.save();
@@ -63,8 +56,8 @@ export abstract class DrawUtils { // TODO service
             }
             this.context.drawImage(
                 drawable.image,
-                drawable.spriteStartingPoint.x + (drawable.width * drawable.currentFrameNumber),
-                drawable.spriteStartingPoint.y,
+                drawable.getCurrentAnimation().x + (drawable.width * drawable.currentFrameNumber),
+                drawable.getCurrentAnimation().y,
                 drawable.width,
                 drawable.height,
                 isReverse ? getCanvas().width - drawable.x : drawable.x,
@@ -82,32 +75,6 @@ export abstract class DrawUtils { // TODO service
                 drawable.height
             );
         }
-
-
-        // if (iobj.source != null)
-        //     context.drawImage(
-        //     iobj.source,
-        //     iobj.current * iobj.width,
-        //     0,
-        //     iobj.width,
-        //     iobj.height,
-        //     x,
-        //     y,
-        //     iobj.width,
-        //     iobj.height);
-        // iobj.current = (iobj.current + 1) % iobj.total_frames;
-
-
-        // this.context.fillStyle = drawable.color;
-        // this.context.translate(drawable.x, drawable.y);
-        // if (drawable.config.path2DLeft && drawable.speed && drawable.speed < 0) {
-        //     drawable.path2D = drawable.config.path2DLeft;
-        // }
-        // if (drawable.config.path2DRight && drawable.speed && drawable.speed > 0) {
-        //     drawable.path2D = drawable.config.path2DRight;
-        // }
-        // this.context.fill(drawable.path2D);
-
         this.resetContextTransform();
     }
 

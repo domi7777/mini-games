@@ -1,10 +1,11 @@
-import {config, StageConfig} from "../config";
+import {config} from "../config";
 import {getCanvas, getHeight, getWidth} from "./global-functions";
 import {Stage} from "./stage";
 import {DrawUtils} from "./drawing/draw-utils";
-import {AnimatedDrawable} from "./drawing/animated-drawable";
+import {AnimatedDrawable} from "./animations/animated-drawable";
 import {Point} from "./drawing/point";
 import {ShootingCrosshair} from "./shooting-crosshair";
+import {AnimationUtils} from "./animations/animation-utils";
 
 export class Game {
     private pause = false;
@@ -71,15 +72,18 @@ export class Game {
             const elementsToDraw = this.currentStage.getElementsToDraw();
             elementsToDraw
                 .filter(element => element instanceof AnimatedDrawable)
-                .forEach(element => {
-                    const drawable = element as AnimatedDrawable;
-                    if (this.currentTime > drawable.lastFrameChangeTime + drawable.timeBetweenFrameChange) {
-                        drawable.setNextFrameNumber();
-                        drawable.lastFrameChangeTime = this.currentTime;
-                    }
-                });
+                .forEach(element => this.setNextAnimationFrameIfNeeded(element as AnimatedDrawable));
             DrawUtils.draw(...elementsToDraw);
             this.drawHUD();
+        }
+    }
+
+    private setNextAnimationFrameIfNeeded(drawable: AnimatedDrawable) {
+        const animations = drawable.animations;
+        const currentAnimation = drawable.getCurrentAnimation();
+        if (this.currentTime > drawable.lastFrameChangeTime + animations.timeBetweenFrameChange) {
+            drawable.currentFrameNumber = AnimationUtils.getNextAnimationFrame(drawable, currentAnimation);
+            drawable.lastFrameChangeTime = this.currentTime;
         }
     }
 

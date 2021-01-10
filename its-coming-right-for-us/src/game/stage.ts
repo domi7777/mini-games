@@ -6,6 +6,8 @@ import {Direction} from "./drawing/direction.enum";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {Point} from "./drawing/point";
 import {CollisionUtils} from "./collision-utils";
+import {AnimationType} from "./animations/animation-type.enum";
+import {Duck} from "./duck";
 
 export class Stage {
 
@@ -36,10 +38,8 @@ export class Stage {
 
     executeEveryFrameActions() {
         this.handleEnemiesMovment();
-        this.handleEnemiesDeaths();
-
         if (this.enemies.length === 0) {
-            if(!this.resolvePromise) {
+            if (!this.resolvePromise) {
                 throw new Error('no this.resolvePromise')
             }
             this.resolvePromise(`Stage ${this.stageNumber} completed!`);
@@ -78,44 +78,21 @@ export class Stage {
 
     getElementsToDraw(): Drawable[] {
         return [
-            // ...this.missiles,
             ...this.enemies,
             this.shootingCrosshair
         ];
     }
 
     shoot(point: Point) {
-        console.log('shoot', point)
+        //console.log('shoot', point)
         this.enemies
             .filter(enemy => !enemy.death && CollisionUtils.isPointInDrawableBounds(point, enemy))
             .forEach(enemy => this.destroyEnemy(enemy));
     }
 
-
-    //
-    // #checkCollisions() {
-    //     // check enemies/missiles collisions
-    //     this.enemies
-    //         .filter(enemy => !enemy.death)
-    //         .forEach(enemy => {
-    //             this.missiles.forEach(missile => {
-    //                 if (this.#isColliding(enemy, missile)) {
-    //                     this.#destroyEnemy(enemy);
-    //                     missile.death = true;
-    //                 }
-    //             })
-    //             if (CollisionUtils.getCollisionPoints(this.spaceship).some(position => this.#isColliding(enemy, position))
-    //                 && !this.spaceship.death && !this.#isSpaceshipInSafePeriod()) {
-    //                 this.spaceship.death = true;
-    //                 this.#destroyEnemy(enemy);
-    //             }
-    //         });
-    // }
-    //
-
-    private createEnemies() {
+    private createEnemies() { // TODO refactor to create enemies once at a time (config)
         for (let i = 0; i < this.config.numberOfEnemies; i++) {
-            const enemy = new Enemy(this.config.enemy)
+            const enemy = new Duck(this.config.enemy, AnimationType.horizontal)
             enemy.y = (enemy.height * i * 1.5) - 200;
             enemy.x = enemy.width * i * 5;
             this.enemies.push(enemy);
@@ -127,20 +104,11 @@ export class Stage {
         console.log('destroy enemy')
         enemy.death = true;
         //TODO this.spaceship.score += enemy.scoreValue;
-        enemy.spriteStartingPoint.y = 236; // fixme configurable
-        enemy.totalNumberOfFrames = 1;
-        enemy.currentFrameNumber = 0;
+        enemy.setAnimation(AnimationType.death);
         setTimeout(() => {
             enemy.falling = true;
-            enemy.spriteStartingPoint.x = 40; // fixme configurable
-        },250)
+            enemy.setAnimation(AnimationType.fall)
+        }, 350/*TODO configurable*/)
     }
 
-    private handleEnemiesDeaths() {
-        // this.enemies = this.enemies
-        //     .filter(enemy => enemy.death)
-        //     .forEach(enemy => {
-        //
-        //     })
-    }
 }
