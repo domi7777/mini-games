@@ -1,8 +1,17 @@
 import {Drawable} from "./drawing/drawable";
-import {DrawableConfig} from "../config";
+import {Point} from "./drawing/point";
+import {DrawableConfig} from "./drawing/drawable-config";
 
 export class ShootingCrosshair extends Drawable {
+    score = 0;
     constructor(config: DrawableConfig) {
         super(config)
+    }
+
+    setPosition(point: Point) {
+        this.position = {
+            x: point.x - this.width/2,
+            y: point.y - this.height/2
+        }
     }
 }
