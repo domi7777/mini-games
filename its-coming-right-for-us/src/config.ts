@@ -1,12 +1,10 @@
-import {Point} from "./game/drawing/point";
+import {AbstractAnimationsConfig, animationsConfig, DuckAnimationsConfig} from "./animations-config";
 
 const sprites = require('../images/duck-hunt-sprites.png');
 const crosshair = require('../images/crosshair.png')
 
 export interface AnimatedDrawableConfig extends DrawableConfig {
-    numberOfFrames: number;
-    timeBetweenFrameChange: number;
-    spriteStartingPoint: Point;
+    animations: AbstractAnimationsConfig;
 }
 
 export interface DrawableConfig {
@@ -14,11 +12,12 @@ export interface DrawableConfig {
     y: number,
     width: number,
     height: number,
-    image: any; // TODO not sure
+    image: any; // TODO not sure which type
 }
 
 export interface EnemyConfig extends AnimatedDrawableConfig {
     speed: number;
+    animations: DuckAnimationsConfig;
 }
 
 export interface StageConfig {
@@ -36,15 +35,9 @@ export interface GameConfig {
     stages: StageConfig[]
 }
 
-const spriteStartingPoints = {
-    purpleDuck: {x: 0, y: 117},
-    greenDuck: {x: 129, y: 117}
-}
 const defaultDuckConfig = {
     speed: 2,
     image: sprites,
-    timeBetweenFrameChange: 200,
-    numberOfFrames: 3,
     x: 50,
     y: 50,
     width: 40,
@@ -54,17 +47,24 @@ const defaultDuckConfig = {
 
 const stages: StageConfig[] = [
     {
+        numberOfEnemies: 5,
+        enemy: {
+            ...defaultDuckConfig,
+            animations: animationsConfig.purpleDuck
+        }
+    },
+    {
         numberOfEnemies: 7,
         enemy: {
             ...defaultDuckConfig,
-            spriteStartingPoint: spriteStartingPoints.purpleDuck,
+            animations: animationsConfig.greenDuck
         }
     },
     {
         numberOfEnemies: 9,
         enemy: {
             ...defaultDuckConfig,
-            spriteStartingPoint: spriteStartingPoints.greenDuck,
+            animations: animationsConfig.brownDuck
         }
     }
 ];

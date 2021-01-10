@@ -1,7 +1,7 @@
 import {DrawableConfig} from "../../config";
 import {Point} from "./point";
 
-export class Drawable {
+export abstract class Drawable {
     shouldDraw = true;
     position: Point;
     width: number;
@@ -9,7 +9,7 @@ export class Drawable {
     image: HTMLImageElement;
     private config: DrawableConfig;
 
-    constructor(config: DrawableConfig) {
+    protected constructor(config: DrawableConfig) {
         this.position = {x: config.x, y: config.y}
         this.width = config.width;
         this.height = config.height;
