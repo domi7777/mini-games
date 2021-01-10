@@ -44,7 +44,7 @@ export class Game {
                 );
                 const missedDucks: number = <number>await this.currentStage.run();
                 if (missedDucks > 3) {
-                    throw new Error('You missed to many birds!');
+                    throw new Error('You missed too many birds!');
                 } else {
                     this.running = false;
                     this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
