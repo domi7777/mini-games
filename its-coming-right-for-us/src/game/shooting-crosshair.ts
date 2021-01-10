@@ -3,6 +3,7 @@ import {Point} from "./drawing/point";
 import {DrawableConfig} from "./drawing/drawable-config";
 
 export class ShootingCrosshair extends Drawable {
+    score = 0;
     constructor(config: DrawableConfig) {
         super(config)
     }

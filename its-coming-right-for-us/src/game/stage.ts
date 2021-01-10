@@ -7,6 +7,7 @@ import {CollisionUtils} from "./collision-utils";
 import {AnimationType} from "./animations/animation-type.enum";
 import {Duck} from "./enemy/duck";
 import {StageConfig} from "./config/stages-config";
+import {TimeUtils} from "./time-utils";
 
 export class Stage {
 
@@ -16,6 +17,8 @@ export class Stage {
     private rejectPromise?: (reason?: any) => void;
 
     ducks: Duck[] = [];
+    private allEnemiesCreated = false;
+    missed = 0;
 
     constructor(public stageNumber: number,
                 private config: StageConfig,
@@ -37,11 +40,11 @@ export class Stage {
 
     executeEveryFrameActions() {
         this.handleEnemiesMovment();
-        if (this.ducks.length === 0) {
+        if (this.allEnemiesCreated && this.ducks.length === 0) {
             if (!this.resolvePromise) {
                 throw new Error('no this.resolvePromise')
             }
-            this.resolvePromise(`Stage ${this.stageNumber} completed!`);
+            this.resolvePromise(this.missed);
         }
     }
 
@@ -50,29 +53,35 @@ export class Stage {
             .filter(duck => !duck.death)
             .forEach(duck => {
                 // TODO change movment
-                if (duck.y < duck.height) {
-                    duck.y += duck.speed;
-                } else {
-                    const isAtLeftLimit = duck.x < duck.width / 2;
-                    const isAtRightLimit = duck.x > getWidth() - duck.width / 2;
 
-                    if (isAtRightLimit || isAtLeftLimit) {
-                        duck.setDirection(isAtLeftLimit ? Direction.right : Direction.left);
-                        duck.x = isAtLeftLimit ? duck.width : getWidth() - duck.width;
-                        duck.speed = -duck.speed;
-                        duck.y += duck.height;
-                    }
-                    duck.x += duck.speed;
+                const isOutsidePLayableArea = duck.x < -duck.width
+                    || duck.x > getWidth()
+                    || duck.y > getHeight() - this.grassHeight
+                    || duck.y < -duck.height;
+
+                if (isOutsidePLayableArea) {
+                    this.missed++;
+                    this.removeDuck(duck);
+                    console.log('missed', duck)
+                } else {
+                    const speedXY = this.getSpeedIncrease(duck);
+                    duck.x += speedXY.x;
+                    duck.y += speedXY.y;
                 }
+
             });
-        this.ducks
+        [...this.ducks]
             .filter(duck => duck.death && duck.falling)
             .forEach(duck => {
                 duck.y += duck.animations.fallingSpeed;
                 if (duck.y > getHeight() - this.grassHeight) {
-                    this.ducks.splice(this.ducks.indexOf(duck), 1);
+                    this.removeDuck(duck);
                 }
             });
+    }
+
+    private removeDuck(duck: Duck) {
+        this.ducks.splice(this.ducks.indexOf(duck), 1);
     }
 
     getElementsToDraw(): Drawable[] {
@@ -90,19 +99,19 @@ export class Stage {
         }
     }
 
-    private createEnemies() { // TODO refactor to create enemies once at a time (config)
-        for (let i = 0; i < this.config.numberOfEnemies; i++) {
-            const enemy = new Duck(this.config.enemy, AnimationType.horizontal)
-            enemy.y = (enemy.height * i * 1.5) - 200;
-            enemy.x = enemy.width * i * 5;
+    private async createEnemies() {
+        for (let enemyConfig of this.config.enemies) {
+            await TimeUtils.waitMillis(enemyConfig.creationDelay);
+            const enemy = new Duck(enemyConfig);
             this.ducks.push(enemy);
         }
+        this.allEnemiesCreated = true;
     }
 
 
     private destroyEnemy(duck: Duck) {
         duck.death = true;
-        //TODO this.spaceship.score += duck.scoreValue;
+        this.shootingCrosshair.score += duck.scoreValue;
         duck.setAnimation(AnimationType.death);
         setTimeout(() => {
             duck.falling = true;
@@ -110,4 +119,17 @@ export class Stage {
         }, duck.animations.timeBetweenDeathAndFallTime)
     }
 
+    private getSpeedIncrease(duck: Duck): Point {
+        const speedX = duck.direction === Direction.right ? duck.enemyConfig.speed : -duck.enemyConfig.speed;
+        switch (duck.animationType) {
+            case AnimationType.horizontal:
+                return {x: speedX, y: 0};
+            case AnimationType.vertical:
+                return {x: 0, y: -duck.speed};
+            case AnimationType.diagonal:
+                return {x: speedX, y: -duck.speed};
+            default:
+                return {x: 0, y: 0};
+        }
+    }
 }

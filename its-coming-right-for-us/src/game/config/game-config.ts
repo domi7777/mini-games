@@ -1,6 +1,7 @@
 import {StageConfig, stagesConfig} from "./stages-config";
 import {sprites} from "./sprites-config";
 import {DrawableConfig} from "../drawing/drawable-config";
+import {getGrassHeight} from "../global-functions";
 
 export interface GameConfig {
     text: {
@@ -27,5 +28,5 @@ export const gameConfig: GameConfig = {
         image: sprites.crosshair
     },
     stages: stagesConfig,
-    grassHeight: 150
+    grassHeight: getGrassHeight()
 }

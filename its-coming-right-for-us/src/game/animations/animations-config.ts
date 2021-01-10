@@ -25,7 +25,7 @@ export type AnimationsConfig = {
     brownDuck: DuckAnimationsConfig;
 }
 const defaultConfig = {
-    timeBetweenFrameChange: 200,
+    timeBetweenFrameChange: 150,
     timeBetweenDeathAndFallTime: 350,
     fallingSpeed: 4
 }

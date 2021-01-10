@@ -6,6 +6,7 @@ import {Point} from "./drawing/point";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {AnimationUtils} from "./animations/animation-utils";
 import {GameConfig} from "./config/game-config";
+import {TimeUtils} from "./time-utils";
 
 export class Game {
     private pause = false;
@@ -28,20 +29,32 @@ export class Game {
         this.canvas.classList.add('in-game');
 
         this.listenOnUserInputs();
-        window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
         try {
             for (let i = 0; i < this.config.stages.length; i++) {
+                const roundNumber = i + 1;
+                this.drawText(`Round ${roundNumber}`, {x: 70, y: 250}, 25);
+                await TimeUtils.waitMillis(3000);
+                this.running = true;
+                window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
                 this.currentStage = new Stage(
-                    i + 1,
+                    roundNumber,
                     this.config.stages[i],
                     this.config.grassHeight,
                     this.shootingCrosshair
                 );
-                await this.currentStage.run();
+                const missedDucks: number = <number>await this.currentStage.run();
+                if (missedDucks > 3) {
+                    throw new Error('You missed to many birds!');
+                } else {
+                    this.running = false;
+                    this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
+                    await TimeUtils.waitMillis(3000);
+                    this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
+                }
             }
-            // this.gameOver('Congratulations! ', 'Your couch is saved!');
+            this.gameOver('Congratulations! ', `Score: ${this.shootingCrosshair.score}`);
         } catch (error) {
-            // this.gameOver(error.message);
+            this.gameOver(error.message);
         }
     }
 
@@ -60,16 +73,9 @@ export class Game {
             this.currentTime = date;
             this.currentStage.executeEveryFrameActions();
             this.drawScreen();
-            // if (this.spaceship.lives <= 0) {
-            //     this.spaceship.shouldDraw = false;
-            //     this.gameOver('Your hand was bitten too badly...');
-            // }
             window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
         }
     }
-
-    // 30 fps => called 30 per s
-    // 4fps => 4 per s
 
     drawScreen() {
         if (this.currentStage) {
@@ -92,16 +98,31 @@ export class Game {
     }
 
     drawHUD() {
-        const fontSize = this.config.text.fontSize;
+        const bottomY = this.height - this.config.text.fontSize + 5;
+
+        // bottom left
+        this.drawText(`Round ${this.currentStage?.stageNumber}`, {
+            x: 5,
+            y: bottomY - 25
+        });
+
+        this.drawText(`Missed: ${this.currentStage?.missed}`, {
+            x: 5,
+            y: bottomY
+        });
+
+        // bottom center
+        this.drawText(`Score: ${this.shootingCrosshair.score}`, {
+            x: 200,
+            y: bottomY
+        });
+        // DrawUtils.drawText(`Lives: ${this.spaceship.lives}`, {x: this.width - 80, y: y}, bottomY);
+    }
+
+    private drawText(text: string, point: Point, fontSize = this.config.text.fontSize) {
         const fontFamily = this.config.text.fontFamily;
         const fontColor = this.config.text.fontColor;
-        const y = this.height - fontSize;
-        DrawUtils.drawText(`Stage ${this.currentStage?.stageNumber}`, {
-            x: 5,
-            y: fontSize + 5
-        }, fontSize, fontColor, fontFamily);
-        // DrawUtils.drawText(`Score: ${this.spaceship.score}`, {x: (this.width / 2) - 30, y: y}, fontSize);
-        // DrawUtils.drawText(`Lives: ${this.spaceship.lives}`, {x: this.width - 80, y: y}, fontSize);
+        DrawUtils.drawText(text, point, fontSize, fontColor, fontFamily);
     }
 
     getMousePos(evt: MouseEvent | Touch): Point {
@@ -110,5 +131,21 @@ export class Game {
             x: evt.clientX - rect.left,
             y: evt.clientY - rect.top
         };
+    }
+
+    gameOver(reason: string, gameOverText = 'Game over') {
+        this.drawScreen();
+        this.running = false;
+        setTimeout(() => this.drawText(reason, {x: 40, y: 220}), 200);
+        setTimeout(() => this.drawText(gameOverText, {x: 40, y: 300}), 1000);
+        setTimeout(() => {
+            this.canvas.classList.remove('in-game');
+            this.drawText('Retry?', {x: (this.width / 2) - 40, y: 360}, 30);
+            const retry = () => {
+                this.canvas.removeEventListener('click', retry);
+                this.start();
+            }
+            this.canvas.addEventListener('click', retry);
+        }, 2000);
     }
 }

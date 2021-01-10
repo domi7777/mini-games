@@ -5,7 +5,7 @@ export abstract class CollisionUtils {
 
     static isPointInDrawableBounds(point: Point, drawable: Drawable) {
         //console.log(point, drawable.x, drawable.y, drawable.width, drawable.height)
-        const boundRatio = 2;
+        const boundRatio = 1.5;
         return point.x < drawable.x + drawable.width / boundRatio  // todo configurable bounds?
             && point.x > drawable.x - drawable.width / boundRatio
             && point.y < drawable.y + drawable.height / boundRatio

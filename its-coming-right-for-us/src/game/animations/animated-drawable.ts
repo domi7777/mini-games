@@ -7,19 +7,16 @@ import {AnimatedDrawableConfig} from "../drawing/drawable-config";
 export abstract class AnimatedDrawable extends Drawable {
     currentFrameNumber = 0;
     lastFrameChangeTime = 0;
-    direction = Direction.right;
+    direction: Direction;
     animations: AbstractAnimationsConfig;
 
     protected constructor(config: AnimatedDrawableConfig, public animationType: AnimationType) {
         super(config);
+        this.direction = config.defaultDirection;
         this.animations = config.animations;
     }
 
     abstract getCurrentAnimation(): AnimationConfig;
-
-    setDirection(direction: Direction) {
-        this.direction = direction;
-    }
 
     setAnimation(animationType: AnimationType) {
         this.currentFrameNumber = 0;

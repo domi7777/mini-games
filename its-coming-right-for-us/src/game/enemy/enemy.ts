@@ -10,5 +10,6 @@ export abstract class Enemy extends AnimatedDrawable {
     protected constructor(public enemyConfig: EnemyConfig, animationType: AnimationType) {
         super(enemyConfig, animationType);
         this.speed = enemyConfig.speed;
+        this.direction = enemyConfig.defaultDirection;
     }
 }
