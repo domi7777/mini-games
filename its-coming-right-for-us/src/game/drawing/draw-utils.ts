@@ -1,5 +1,5 @@
 import {Drawable} from "./drawable";
-import {get2DContext, getCanvas, getHeight, getWidth} from "../global-functions";
+import {get2DContext, getCanvas, getHeight, getWidth, isDebug} from "../global-functions";
 import {AnimatedDrawable} from "../animations/animated-drawable";
 import {Direction} from "./direction.enum";
 
@@ -10,10 +10,14 @@ export abstract class DrawUtils {
     static height = getHeight();
 
     static draw(...drawables: Drawable[]) {
-        get2DContext().clearRect(0, 0, getWidth(), getHeight());
+        this.clearScreen();
         drawables
             .filter(drawable => drawable.shouldDraw)
             .forEach(drawable => this.doDraw(drawable));
+    }
+
+    static clearScreen() {
+        get2DContext().clearRect(0, 0, getWidth(), getHeight());
     }
 
     static drawText(text: string,
@@ -47,21 +51,44 @@ export abstract class DrawUtils {
     }
 
     private static doDraw(drawable: Drawable) {
+        this.context.beginPath();
+        const scale = drawable.scale;
+
+        if (isDebug()) {
+            this.context.strokeStyle = 'red';
+            this.context.moveTo(drawable.x, drawable.y);
+            this.context.lineTo(drawable.x + drawable.width * scale, drawable.y);
+            this.context.lineTo(drawable.x + drawable.width * scale, drawable.y + drawable.height * scale);
+            this.context.lineTo(drawable.x, drawable.y + drawable.height * scale);
+            this.context.lineTo(drawable.x, drawable.y);
+        }
+
+        this.context.stroke();
         if (drawable instanceof AnimatedDrawable) {
             const isReverse = drawable.direction === Direction.left;
+
             if (isReverse) {
                 this.context.save();
                 this.context.translate(getCanvas().width, 0);
-                this.context.scale(-1, 1);
+                this.context.scale(-scale, scale);
+            } else {
+                this.context.save();
+                this.context.translate(0, 0);
+                this.context.scale(scale, scale);
             }
+
             this.context.drawImage(
                 drawable.image,
+                // locate frames in sprite:
                 drawable.getCurrentAnimation().x + (drawable.width * drawable.currentFrameNumber),
                 drawable.getCurrentAnimation().y,
                 drawable.width,
                 drawable.height,
-                isReverse ? getCanvas().width - drawable.x - drawable.width / 2 : drawable.x + drawable.width / 2,
-                drawable.y + drawable.height / 2,
+                // where to draw it on canvas:
+                isReverse
+                    ? (getCanvas().width / scale) - (drawable.x / scale) - drawable.width
+                    : drawable.x / scale,
+                drawable.y / scale,
                 drawable.width,
                 drawable.height
             );

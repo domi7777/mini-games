@@ -7,7 +7,8 @@ export abstract class Drawable {
     width: number;
     height: number;
     image: HTMLImageElement;
-    private config: DrawableConfig;
+    config: DrawableConfig;
+    scale: number;
 
     protected constructor(config: DrawableConfig) {
         this.position = {x: config.x, y: config.y}
@@ -16,6 +17,8 @@ export abstract class Drawable {
         this.image = new Image();
         this.image.src = config.image.default;
         this.config = config;
+        this.scale = config.scale || 1;
+
     }
 
     get x() {

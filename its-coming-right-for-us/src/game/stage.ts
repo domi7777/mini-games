@@ -8,6 +8,7 @@ import {AnimationType} from "./animations/animation-type.enum";
 import {Duck} from "./enemy/duck";
 import {StageConfig} from "./config/stages-config";
 import {TimeUtils} from "./time-utils";
+import {EnemyConfig} from "./enemy/enemy-config";
 
 export class Stage {
 
@@ -19,6 +20,9 @@ export class Stage {
     ducks: Duck[] = [];
     private allEnemiesCreated = false;
     missed = 0;
+    private enemiesConfig: EnemyConfig[] = [];
+    private previousEnemyCreated = true;
+    private previousEnemy?: Duck;
 
     constructor(public stageNumber: number,
                 private config: StageConfig,
@@ -34,12 +38,13 @@ export class Stage {
             this.resolvePromise = resolve;
             this.rejectPromise = reject;
         });
-        this.createEnemies();
+        this.enemiesConfig = [...this.config.enemies];
         return promise;
     }
 
     executeEveryFrameActions() {
         this.handleEnemiesMovment();
+        this.createNextEnemy().catch(console.error);
         if (this.allEnemiesCreated && this.ducks.length === 0) {
             if (!this.resolvePromise) {
                 throw new Error('no this.resolvePromise')
@@ -48,12 +53,35 @@ export class Stage {
         }
     }
 
+    private async createNextEnemy(): Promise<void> {
+        if (this.previousEnemyCreated) {
+            this.previousEnemyCreated = false;
+            const enemyConfig = this.enemiesConfig.shift()
+            if (enemyConfig) {
+                await TimeUtils.waitMillis(enemyConfig.creationDelay);
+                if (this.previousEnemy) { // FIXME should this be done somewhere else?
+                    if (enemyConfig.relativeToPreviousEnemyX) {
+                        enemyConfig.x = this.previousEnemy.enemyConfig.x + enemyConfig.relativeToPreviousEnemyX;
+                    }
+                    if (enemyConfig.relativeToPreviousEnemyY) {
+                        enemyConfig.y = this.previousEnemy.enemyConfig.y + enemyConfig.relativeToPreviousEnemyY;
+                    }
+                }
+                const duck = new Duck(enemyConfig);
+
+                this.ducks.push(duck);
+                this.previousEnemy = duck;
+                this.previousEnemyCreated = true;
+            } else {
+                this.allEnemiesCreated = true;
+            }
+        }
+    }
+
     private handleEnemiesMovment() {
         this.ducks
             .filter(duck => !duck.death)
             .forEach(duck => {
-                // TODO change movment
-
                 const isOutsidePLayableArea = duck.x < -duck.width
                     || duck.x > getWidth()
                     || duck.y > getHeight() - this.grassHeight
@@ -62,7 +90,10 @@ export class Stage {
                 if (isOutsidePLayableArea) {
                     this.missed++;
                     this.removeDuck(duck);
-                    console.log('missed', duck)
+                    console.log('missed', duck);
+                    if (duck.lives > 3 && this.rejectPromise) {
+                        this.rejectPromise(new Error('You failed to kill the ducktator!'));
+                    }
                 } else {
                     const speedXY = this.getSpeedIncrease(duck);
                     duck.x += speedXY.x;
@@ -95,28 +126,26 @@ export class Stage {
         // console.log('shoot', point)
         const duck = this.ducks.find(duck => !duck.death && CollisionUtils.isPointInDrawableBounds(point, duck));
         if (duck) {
-            this.destroyEnemy(duck)
+            this.shootEnemy(duck)
         }
     }
 
-    private async createEnemies() {
-        for (let enemyConfig of this.config.enemies) {
-            await TimeUtils.waitMillis(enemyConfig.creationDelay);
-            const enemy = new Duck(enemyConfig);
-            this.ducks.push(enemy);
+    private shootEnemy(duck: Duck) {
+        duck.lives--;
+        duck.setAnimation(AnimationType.hit);
+        if (duck.lives <= 0) {
+            duck.death = true;
+            this.shootingCrosshair.score += duck.scoreValue;
+            setTimeout(() => {
+                duck.falling = true;
+                duck.setAnimation(AnimationType.fall)
+            }, duck.animations.timeBetweenDeathAndFallTime)
+        } else {
+            setTimeout(() => {
+                duck.setAnimation(duck.enemyConfig.defaultAnimationType)
+            }, 200);
         }
-        this.allEnemiesCreated = true;
-    }
 
-
-    private destroyEnemy(duck: Duck) {
-        duck.death = true;
-        this.shootingCrosshair.score += duck.scoreValue;
-        duck.setAnimation(AnimationType.death);
-        setTimeout(() => {
-            duck.falling = true;
-            duck.setAnimation(AnimationType.fall)
-        }, duck.animations.timeBetweenDeathAndFallTime)
     }
 
     private getSpeedIncrease(duck: Duck): Point {

@@ -4,8 +4,11 @@ import {AnimationType} from "../animations/animation-type.enum";
 
 export interface EnemyConfig extends AnimatedDrawableConfig {
     speed: number;
-    scoreValue:number;
+    scoreValue: number;
     animations: DuckAnimationsConfig;
     defaultAnimationType: AnimationType;
     creationDelay: number;
+    relativeToPreviousEnemyY?: number;
+    relativeToPreviousEnemyX?: number;
+    lives: number;
 }

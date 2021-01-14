@@ -4,12 +4,11 @@ import {Point} from "./drawing/point";
 export abstract class CollisionUtils {
 
     static isPointInDrawableBounds(point: Point, drawable: Drawable) {
-        //console.log(point, drawable.x, drawable.y, drawable.width, drawable.height)
-        const boundRatio = 1.5;
-        return point.x < drawable.x + drawable.width / boundRatio  // todo configurable bounds?
-            && point.x > drawable.x - drawable.width / boundRatio
-            && point.y < drawable.y + drawable.height / boundRatio
-            && point.y > drawable.y - drawable.height / boundRatio
+        console.log(point, drawable.x, drawable.y, drawable.width, drawable.height)
+        return point.x < drawable.x + drawable.width * drawable.scale
+            && point.x > drawable.x
+            && point.y < drawable.y + drawable.height * drawable.scale
+            && point.y > drawable.y
     }
 
 }
