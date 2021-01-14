@@ -7,6 +7,7 @@ export interface DrawableConfig {
     width: number,
     height: number,
     image: any; // TODO not sure which type (webpack)
+    scale?: number;
 }
 
 export interface AnimatedDrawableConfig extends DrawableConfig {

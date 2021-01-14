@@ -17,6 +17,8 @@ export class Game {
     private currentStage?: Stage;
     private running = false;
     private shootingCrosshair: ShootingCrosshair;
+    private continues = 3; // TODO configurable
+    private previousRound = 0;
 
     constructor(private config: GameConfig) {
         document.onvisibilitychange = () => this.pause = document.hidden;
@@ -27,18 +29,27 @@ export class Game {
         this.running = true;
         console.log('starting game');
         this.canvas.classList.add('in-game');
+        if (this.continues === 0) {
+            this.continues = 3;
+        }
 
         this.listenOnUserInputs();
         try {
-            for (let i = 0; i < this.config.stages.length; i++) {
-                const roundNumber = i + 1;
-                this.drawText(`Round ${roundNumber}`, {x: 70, y: 250}, 25);
-                await TimeUtils.waitMillis(3000);
+            for (let i = 1; i <= this.config.stages.length; i++) {
+                const stageConfig = this.config.stages[i - 1];
+                if (i < this.previousRound) {
+                    continue;
+                }
+                this.previousRound = i;
+                DrawUtils.clearScreen();
+                this.drawText(`Round ${this.previousRound}`, {x: 85, y: 150}, 25);
+                this.drawText(stageConfig.title, {x: 40, y: 220}, 15);
+                await TimeUtils.waitMillis(4000);
                 this.running = true;
                 window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
                 this.currentStage = new Stage(
-                    roundNumber,
-                    this.config.stages[i],
+                    this.previousRound,
+                    stageConfig,
                     this.config.grassHeight,
                     this.shootingCrosshair
                 );
@@ -49,12 +60,17 @@ export class Game {
                     this.running = false;
                     this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
                     await TimeUtils.waitMillis(3000);
-                    this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
                 }
             }
+            this.previousRound = 0;
             this.gameOver('Congratulations! ', `Score: ${this.shootingCrosshair.score}`);
         } catch (error) {
-            this.gameOver(error.message);
+            this.continues--;
+            console.log(this.continues);
+            if (this.continues === 0) {
+                this.previousRound = 0;
+            }
+            this.gameOver(error.message, this.continues > 0 ? `Continues: ${this.continues}` : 'Game Over');
         }
     }
 
@@ -64,7 +80,12 @@ export class Game {
         // this.canvas.ontouchstart = (event) // TODO
         this.canvas.onclick = (event: MouseEvent) => {
             this.shootingCrosshair.setPosition(this.getMousePos(event));
-            this.currentStage?.shoot(this.shootingCrosshair.position);
+            const position = this.shootingCrosshair.position;
+            this.currentStage?.shoot({
+                // x, y are top left of the actual position clicked
+                x: position.x + this.shootingCrosshair.width / 2,
+                y: position.y + this.shootingCrosshair.height / 2
+            });
         }
     }
 
@@ -116,7 +137,6 @@ export class Game {
             x: 200,
             y: bottomY
         });
-        // DrawUtils.drawText(`Lives: ${this.spaceship.lives}`, {x: this.width - 80, y: y}, bottomY);
     }
 
     private drawText(text: string, point: Point, fontSize = this.config.text.fontSize) {
