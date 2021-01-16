@@ -373,14 +373,14 @@ export const stagesConfig: StageConfig[] = [
             {...diagonalRightDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 2000},
+            {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 5000},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...diagonalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 2000},
+            {...diagonalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 5000},
             {...diagonalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
