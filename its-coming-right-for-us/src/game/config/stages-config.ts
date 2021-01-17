@@ -352,35 +352,35 @@ export const stagesConfig: StageConfig[] = [
             {...horizontalRightDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalLeftDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...horizontalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks},
+            {...horizontalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay:  2000},
             {...horizontalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...horizontalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks},
+            {...horizontalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 2000},
             {...horizontalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...horizontalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...diagonalRightDirectionDuck, ...purpleDuck, y: 200, creationDelay: 5000},
+            {...diagonalRightDirectionDuck, ...purpleDuck, y: 200, creationDelay: 3000},
             {...diagonalLeftDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...purpleDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 5000},
+            {...diagonalRightDirectionDuck, ...greenDuck, y: 200, creationDelay: 1000},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...greenDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
 
-            {...diagonalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 5000},
+            {...diagonalRightDirectionDuck, ...brownDuck, y: 200, creationDelay: 1000},
             {...diagonalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalRightDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
             {...diagonalLeftDirectionDuck, ...brownDuck, relativeToPreviousEnemyY: minDistanceBetweenDucks, creationDelay: 0},
@@ -391,7 +391,7 @@ export const stagesConfig: StageConfig[] = [
     {
         title: 'All hail the ducktator!',
         enemies: [
-            {...verticalDuck, x: 120, scale: 3, lives: 50, scoreValue: 100000, creationDelay: 12000},
+            {...verticalDuck, x: 120, scale: 3, lives: 50, scoreValue: 100000, creationDelay: 5000},
         ]
     }
 ];
