@@ -1,12 +1,18 @@
 import {getCanvas, getHeight, getWidth} from "./global-functions";
-import {Stage} from "./stage";
+import {Stage} from "./stage/stage";
 import {DrawUtils} from "./drawing/draw-utils";
 import {AnimatedDrawable} from "./animations/animated-drawable";
 import {Point} from "./drawing/point";
 import {ShootingCrosshair} from "./shooting-crosshair";
 import {AnimationUtils} from "./animations/animation-utils";
-import {GameConfig} from "./config/game-config";
-import {TimeUtils} from "./time-utils";
+import {GameConfig} from "./game-config";
+import {TimeUtils} from "./utils/time-utils";
+import {StageConfig} from "./stage/stages-config";
+import {DuckAnimationType} from "./duck/duck-animation-type.enum";
+import {Dog} from "./dog/dog";
+import {dogConfig} from "./dog/dog.config";
+import {Drawable} from "./drawing/drawable";
+import {DogAnimationType} from "./dog/dog-animation.type";
 
 export class Game {
     private pause = false;
@@ -19,6 +25,7 @@ export class Game {
     private shootingCrosshair: ShootingCrosshair;
     private continues = 3; // TODO configurable
     private previousRound = 0;
+    private dogAnimation: Dog | null = null;
 
     constructor(private config: GameConfig) {
         document.onvisibilitychange = () => this.pause = document.hidden;
@@ -41,22 +48,14 @@ export class Game {
                     continue;
                 }
                 this.previousRound = i;
-                DrawUtils.clearScreen();
-                this.drawText(`Round ${this.previousRound}`, {x: 85, y: 150}, 25);
-                this.drawText(stageConfig.title, {x: 40, y: 220}, 15);
-                await TimeUtils.waitMillis(4000);
-                this.running = true;
-                window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
-                this.currentStage = new Stage(
-                    this.previousRound,
-                    stageConfig,
-                    this.config.grassHeight,
-                    this.shootingCrosshair
-                );
-                const missedDucks: number = <number>await this.currentStage.run();
+                this.currentStage = await this.createNewStage(stageConfig);
+                const missedDucks = await this.currentStage.run();
+
                 if (missedDucks > 3) {
                     throw new Error('You missed too many birds!');
                 } else {
+                    const dogAnimationType = missedDucks === 0 ? DogAnimationType.twoDucks : DogAnimationType.oneDuck;
+                    await this.createDogAnimation(dogAnimationType);
                     this.running = false;
                     this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
                     await TimeUtils.waitMillis(3000);
@@ -65,6 +64,7 @@ export class Game {
             this.previousRound = 0;
             this.gameOver('Congratulations! ', `Score: ${this.shootingCrosshair.score}`);
         } catch (error) {
+            await this.createDogAnimation(DogAnimationType.laughing);
             this.continues--;
             console.log(this.continues);
             if (this.continues === 0) {
@@ -72,6 +72,21 @@ export class Game {
             }
             this.gameOver(error.message, this.continues > 0 ? `Continues: ${this.continues}` : 'Game Over');
         }
+    }
+
+    private async createNewStage(stageConfig: StageConfig): Promise<Stage> {
+        DrawUtils.clearScreen();
+        this.drawText(`Round ${this.previousRound}`, {x: 85, y: 150}, 25);
+        this.drawText(stageConfig.title, {x: 40, y: 220}, 15);
+        await TimeUtils.waitMillis(4000);
+        this.running = true;
+        window.requestAnimationFrame(this.executeNextAnimationFrameActions.bind(this));
+        return new Stage(
+            this.previousRound,
+            stageConfig,
+            this.config.grassHeight,
+            this.shootingCrosshair
+        );
     }
 
     private listenOnUserInputs() {
@@ -89,27 +104,39 @@ export class Game {
         }
     }
 
-    executeEveryFrameActions(date: number): void {
+    executeNextAnimationFrameActions(date: number): void {
         if (!this.pause && this.currentStage && this.running) {
             this.currentTime = date;
-            this.currentStage.executeEveryFrameActions();
+            this.currentStage?.executeEveryFrameActions();
+            this.dogAnimation?.runNextAnimationFrame();
             this.drawScreen();
-            window.requestAnimationFrame(this.executeEveryFrameActions.bind(this));
+            window.requestAnimationFrame(this.executeNextAnimationFrameActions.bind(this));
         }
     }
 
     drawScreen() {
         if (this.currentStage) {
-            const elementsToDraw = this.currentStage.getElementsToDraw();
+            const elementsToDraw = this.getElementsToDraw();
             elementsToDraw
                 .filter(element => element instanceof AnimatedDrawable)
-                .forEach(element => this.setNextAnimationFrameIfNeeded(element as AnimatedDrawable));
+                .forEach(element => this.setNextAnimationFrameIfNeeded(element as AnimatedDrawable<DuckAnimationType>));
             DrawUtils.draw(...elementsToDraw);
             this.drawHUD();
         }
     }
 
-    private setNextAnimationFrameIfNeeded(drawable: AnimatedDrawable) {
+    private getElementsToDraw(): Drawable[] {
+        if (!this.currentStage) {
+            throw new Error('no current stage');
+        }
+        const elementsToDraw = this.currentStage.getElementsToDraw();
+        if (this.dogAnimation) {
+            elementsToDraw.push(this.dogAnimation);
+        }
+        return elementsToDraw;
+    }
+
+    private setNextAnimationFrameIfNeeded(drawable: AnimatedDrawable<DuckAnimationType>) {
         const animations = drawable.animations;
         const currentAnimation = drawable.getCurrentAnimation();
         if (this.currentTime > drawable.lastFrameChangeTime + animations.timeBetweenFrameChange) {
@@ -168,4 +195,15 @@ export class Game {
             this.canvas.addEventListener('click', retry);
         }, 2000);
     }
+
+    private async createDogAnimation(animationType: DogAnimationType) {
+        await TimeUtils.waitMillis(700);
+        this.dogAnimation = new Dog(dogConfig, animationType);
+        await this.dogAnimation.onShowingUpAnimationFinished();
+        await TimeUtils.waitMillis(1000);
+        this.dogAnimation.showOff();
+        await this.dogAnimation.onShowingOffAnimationFinished();
+        this.dogAnimation = null;
+    }
+
 }

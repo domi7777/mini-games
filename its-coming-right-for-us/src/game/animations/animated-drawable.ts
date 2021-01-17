@@ -1,24 +1,25 @@
 import {Drawable} from "../drawing/drawable";
 import {Direction} from "../drawing/direction.enum";
-import {AbstractAnimationsConfig, AnimationConfig} from "./animations-config";
-import {AnimationType} from "./animation-type.enum";
 import {AnimatedDrawableConfig} from "../drawing/drawable-config";
+import {AbstractAnimationsConfig, AnimationConfig} from "./animation.config";
 
-export abstract class AnimatedDrawable extends Drawable {
+export abstract class AnimatedDrawable<T> extends Drawable {
     currentFrameNumber = 0;
     lastFrameChangeTime = 0;
     direction: Direction;
     animations: AbstractAnimationsConfig;
+    animationType: T;
 
-    protected constructor(config: AnimatedDrawableConfig, public animationType: AnimationType) {
+    protected constructor(config: AnimatedDrawableConfig<T>) {
         super(config);
         this.direction = config.defaultDirection;
         this.animations = config.animations;
+        this.animationType = config.defaultAnimationType;
     }
 
     abstract getCurrentAnimation(): AnimationConfig;
 
-    setAnimation(animationType: AnimationType) {
+    setAnimation(animationType: T) {
         this.currentFrameNumber = 0;
         this.animationType = animationType;
     }

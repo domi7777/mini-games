@@ -1,7 +1,7 @@
-import {StageConfig, stagesConfig} from "./stages-config";
-import {sprites} from "./sprites-config";
-import {DrawableConfig} from "../drawing/drawable-config";
-import {getGrassHeight} from "../global-functions";
+import {StageConfig, stagesConfig} from "./stage/stages-config";
+import {sprites} from "./sprites/sprites-config";
+import {DrawableConfig} from "./drawing/drawable-config";
+import {getGrassHeight} from "./global-functions";
 
 export interface GameConfig {
     text: {

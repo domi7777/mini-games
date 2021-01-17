@@ -1,12 +1,11 @@
-import {DuckAnimationsConfig} from "../animations/animations-config";
+import {DuckAnimationsConfig} from "../duck/duck-animation.config";
 import {AnimatedDrawableConfig} from "../drawing/drawable-config";
-import {AnimationType} from "../animations/animation-type.enum";
 
-export interface EnemyConfig extends AnimatedDrawableConfig {
+export interface EnemyConfig<T> extends AnimatedDrawableConfig<T> {
     speed: number;
     scoreValue: number;
     animations: DuckAnimationsConfig;
-    defaultAnimationType: AnimationType;
+    defaultAnimationType: T;
     creationDelay: number;
     relativeToPreviousEnemyY?: number;
     relativeToPreviousEnemyX?: number;

@@ -1,4 +1,4 @@
-import {gameConfig} from "./game/config/game-config";
+import {gameConfig} from "./game/game-config";
 
 require("./style.css");
 
