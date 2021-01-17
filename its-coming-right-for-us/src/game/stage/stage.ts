@@ -1,14 +1,14 @@
-import {get2DContext, getCanvas, getHeight, getWidth} from "./global-functions";
-import {Drawable} from "./drawing/drawable";
-import {Direction} from "./drawing/direction.enum";
-import {ShootingCrosshair} from "./shooting-crosshair";
-import {Point} from "./drawing/point";
-import {CollisionUtils} from "./collision-utils";
-import {AnimationType} from "./animations/animation-type.enum";
-import {Duck} from "./enemy/duck";
-import {StageConfig} from "./config/stages-config";
-import {TimeUtils} from "./time-utils";
-import {EnemyConfig} from "./enemy/enemy-config";
+import {get2DContext, getCanvas, getHeight, getWidth} from "../global-functions";
+import {Drawable} from "../drawing/drawable";
+import {Direction} from "../drawing/direction.enum";
+import {ShootingCrosshair} from "../shooting-crosshair";
+import {Point} from "../drawing/point";
+import {CollisionUtils} from "../utils/collision-utils";
+import {DuckAnimationType} from "../duck/duck-animation-type.enum";
+import {Duck} from "../duck/duck";
+import {StageConfig} from "./stages-config";
+import {TimeUtils} from "../utils/time-utils";
+import {EnemyConfig} from "../enemy/enemy-config";
 
 export class Stage {
 
@@ -20,7 +20,7 @@ export class Stage {
     ducks: Duck[] = [];
     private allEnemiesCreated = false;
     missed = 0;
-    private enemiesConfig: EnemyConfig[] = [];
+    private enemiesConfig: EnemyConfig<DuckAnimationType>[] = [];
     private previousEnemyCreated = true;
     private previousEnemy?: Duck;
 
@@ -32,14 +32,14 @@ export class Stage {
         this.context = get2DContext()
     }
 
-    async run() {
+    async run(): Promise<number> {
         console.log('current stage.run', this.stageNumber)
         const promise = new Promise((resolve, reject) => {
             this.resolvePromise = resolve;
             this.rejectPromise = reject;
         });
         this.enemiesConfig = [...this.config.enemies];
-        return promise;
+        return promise as Promise<number>;
     }
 
     executeEveryFrameActions() {
@@ -132,13 +132,13 @@ export class Stage {
 
     private shootEnemy(duck: Duck) {
         duck.lives--;
-        duck.setAnimation(AnimationType.hit);
+        duck.setAnimation(DuckAnimationType.hit);
         if (duck.lives <= 0) {
             duck.death = true;
             this.shootingCrosshair.score += duck.scoreValue;
             setTimeout(() => {
                 duck.falling = true;
-                duck.setAnimation(AnimationType.fall)
+                duck.setAnimation(DuckAnimationType.fall)
             }, duck.animations.timeBetweenDeathAndFallTime)
         } else {
             setTimeout(() => {
@@ -151,11 +151,11 @@ export class Stage {
     private getSpeedIncrease(duck: Duck): Point {
         const speedX = duck.direction === Direction.right ? duck.enemyConfig.speed : -duck.enemyConfig.speed;
         switch (duck.animationType) {
-            case AnimationType.horizontal:
+            case DuckAnimationType.horizontal:
                 return {x: speedX, y: 0};
-            case AnimationType.vertical:
+            case DuckAnimationType.vertical:
                 return {x: 0, y: -duck.speed};
-            case AnimationType.diagonal:
+            case DuckAnimationType.diagonal:
                 return {x: speedX, y: -duck.speed};
             default:
                 return {x: 0, y: 0};

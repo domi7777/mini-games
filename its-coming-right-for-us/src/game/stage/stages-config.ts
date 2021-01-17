@@ -1,16 +1,16 @@
-import {animationsConfig, DuckAnimationsConfig} from "../animations/animations-config";
-import {sprites} from "./sprites-config";
+import {duckAnimationsConfig, DuckAnimationsConfig} from "../duck/duck-animation.config";
+import {sprites} from "../sprites/sprites-config";
 import {EnemyConfig} from "../enemy/enemy-config";
-import {AnimationType} from "../animations/animation-type.enum";
+import {DuckAnimationType} from "../duck/duck-animation-type.enum";
 import {Direction} from "../drawing/direction.enum";
 import {getGrassHeight, getHeight, getWidth} from "../global-functions";
 
 export interface StageConfig {
     title: string;
-    enemies: EnemyConfig[];
+    enemies: EnemyConfig<DuckAnimationType>[];
 }
 
-const defaultDuckConfig: EnemyConfig = { // fixme enemyConfig should be in enemy-config.ts
+const defaultDuckConfig: EnemyConfig<DuckAnimationType> = { // fixme enemyConfig should be in enemy-config.ts
     speed: 1,
     scoreValue: 100,
     image: sprites.duckHunt,
@@ -18,9 +18,9 @@ const defaultDuckConfig: EnemyConfig = { // fixme enemyConfig should be in enemy
     y: 0,
     width: 38,
     height: 31,
-    defaultAnimationType: AnimationType.horizontal,
+    defaultAnimationType: DuckAnimationType.horizontal,
     defaultDirection: Direction.right,
-    animations: animationsConfig.purpleDuck,
+    animations: duckAnimationsConfig.purpleDuck,
     creationDelay: 500,
     lives: 1
 }
@@ -29,26 +29,26 @@ const verticalDuck = {
     ...defaultDuckConfig,
     y: getHeight() - getGrassHeight(),
     defaultDirection: Direction.right,
-    defaultAnimationType: AnimationType.vertical
+    defaultAnimationType: DuckAnimationType.vertical
 }
 
 const horizontalLeftDirectionDuck = {
     ...defaultDuckConfig,
-    defaultAnimationType: AnimationType.horizontal,
+    defaultAnimationType: DuckAnimationType.horizontal,
     defaultDirection: Direction.left,
     x: getWidth()
 }
 
 const horizontalRightDirectionDuck = {
     ...defaultDuckConfig,
-    defaultAnimationType: AnimationType.horizontal,
+    defaultAnimationType: DuckAnimationType.horizontal,
     defaultDirection: Direction.right,
     x: 0
 }
 
 const diagonalLeftDirectionDuck = {
     ...defaultDuckConfig,
-    defaultAnimationType: AnimationType.diagonal,
+    defaultAnimationType: DuckAnimationType.diagonal,
     defaultDirection: Direction.left,
     x: getWidth(),
     y: verticalDuck.y
@@ -56,7 +56,7 @@ const diagonalLeftDirectionDuck = {
 
 const diagonalRightDirectionDuck = {
     ...defaultDuckConfig,
-    defaultAnimationType: AnimationType.diagonal,
+    defaultAnimationType: DuckAnimationType.diagonal,
     defaultDirection: Direction.right,
     x: 0,
     y: verticalDuck.y
@@ -67,15 +67,15 @@ interface DuckConfig {
     speed: number
 }
 
-const purpleDuck: DuckConfig = {animations: animationsConfig.purpleDuck, speed: 1};
-const greenDuck: DuckConfig = {animations: animationsConfig.greenDuck, speed: 1.2};
-const brownDuck: DuckConfig = {animations: animationsConfig.brownDuck, speed: 1.5};
+const purpleDuck: DuckConfig = {animations: duckAnimationsConfig.purpleDuck, speed: 1};
+const greenDuck: DuckConfig = {animations: duckAnimationsConfig.greenDuck, speed: 1.2};
+const brownDuck: DuckConfig = {animations: duckAnimationsConfig.brownDuck, speed: 1.5};
 
 const createNArray = (n: number) => Array.from(Array(n).keys())
 const minDistanceBetweenDucks = 20;
 const maxNumberOfVerticalDucks = 15;
 
-const verticalWave: (duckConfig: DuckConfig) => EnemyConfig[] = (duckConfig) => [
+const verticalWave: (duckConfig: DuckConfig) => EnemyConfig<DuckAnimationType>[] = (duckConfig) => [
     ...createNArray(maxNumberOfVerticalDucks).map(n => ({
         ...verticalDuck, ...duckConfig,
         x: n * minDistanceBetweenDucks

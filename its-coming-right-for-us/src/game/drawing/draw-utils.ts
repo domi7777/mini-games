@@ -61,9 +61,9 @@ export abstract class DrawUtils {
             this.context.lineTo(drawable.x + drawable.width * scale, drawable.y + drawable.height * scale);
             this.context.lineTo(drawable.x, drawable.y + drawable.height * scale);
             this.context.lineTo(drawable.x, drawable.y);
+            this.context.stroke();
         }
 
-        this.context.stroke();
         if (drawable instanceof AnimatedDrawable) {
             const isReverse = drawable.direction === Direction.left;
 

@@ -1,5 +1,5 @@
-import {AbstractAnimationsConfig} from "../animations/animations-config";
 import {Direction} from "./direction.enum";
+import {AbstractAnimationsConfig} from "../animations/animation.config";
 
 export interface DrawableConfig {
     x: number,
@@ -10,7 +10,8 @@ export interface DrawableConfig {
     scale?: number;
 }
 
-export interface AnimatedDrawableConfig extends DrawableConfig {
+export interface AnimatedDrawableConfig<T> extends DrawableConfig {
     animations: AbstractAnimationsConfig;
     defaultDirection: Direction;
+    defaultAnimationType: T;
 }

@@ -11,11 +11,6 @@ Based on good old Duck Hunt
 - css
 
 #TODO
-crosshair precision
-stages
-scrore
-game over
-
 
 ## Improvements
 
