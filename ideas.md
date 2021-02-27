@@ -1,3 +1,9 @@
 - jeu de wist
 - car game
-- very simple game: shooting game?
+- brick
+- canvasless game (letter game?)
+- drawing game (save: local (& global?))
+- tower defense game
+    - tower placement
+    - tower shootings (auto aim at closest enemy x,y)
+    - 

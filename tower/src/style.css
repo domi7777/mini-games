@@ -1,0 +1,24 @@
+body {
+    padding: 0;
+    margin: 0;
+    color: #bababa;
+    background-color: #393939;
+    text-align: center;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+}
+
+canvas#game {
+    border: 1px solid #4f4d4d;
+    /*background: #09CFFC url('../images/bg.png') no-repeat;*/
+    background-position-y: 280px;
+    background-position-x: -150px;
+}
+
+canvas#game:hover {
+    /*cursor: pointer;*/
+}
+
+canvas#game.in-game:hover {
+    /*cursor: none;*/
+}
