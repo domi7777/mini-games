@@ -1,5 +1,17 @@
 import {Position} from "../math/position";
-import {DrawableConfig} from "./drawable-config";
+
+export interface DrawableConfig {
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    image?: any; // TODO not sure which type (webpack)
+    scale?: number;
+    color?: string;
+    filledWithColor?: boolean;
+    drawShape?: boolean;
+    opacity?: number
+}
 
 export abstract class Drawable {
     shouldDraw = true;
@@ -7,10 +19,11 @@ export abstract class Drawable {
     width: number;
     height: number;
     image?: HTMLImageElement;
-    config: DrawableConfig;
     scale: number;
     color?: string;
     filledWithColor?: boolean;
+    drawShape = true;
+    opacity = 1;
 
     protected constructor(config: DrawableConfig) {
         this.position = {x: config.x, y: config.y}
@@ -22,9 +35,17 @@ export abstract class Drawable {
             this.image = new Image();
             this.image.src = config.image.default;
         }
-        this.config = config;
         this.scale = config.scale || 1;
+        if (config.drawShape !== undefined) {
+            this.drawShape = config.drawShape;
+        }
+        if (config.opacity !== undefined) {
+            this.opacity = config.opacity;
+        }
+    }
 
+    getChildren(): Drawable[] {
+        return [];
     }
 
     get x() {
@@ -48,13 +69,14 @@ export abstract class Drawable {
 
     get center(): Position {
         return {
-            x: this.x + this.width / 2,
-            y: this.y + this.height / 2
+            x: this.x + (this.width / 2) * this.scale,
+            y: this.y + (this.height / 2) * this.scale
         }
     }
+
     set center(position: Position) {
-        this.x = position.x - this.width / 2;
-        this.y = position.y - this.height / 2;
+        this.x = position.x - (this.width / 2) * this.scale;
+        this.y = position.y - (this.height / 2) * this.scale;
     }
 
     get bottom(): Position {

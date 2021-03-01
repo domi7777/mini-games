@@ -1,10 +1,9 @@
 import {Service} from "typedi";
 import {Drawable} from "./drawable";
 import {AnimatedDrawable} from "../animations/animated-drawable";
-import {Direction} from "./direction.enum";
 
 @Service()
-export class DrawService {
+export class DrawingService {
 
     private context: CanvasRenderingContext2D = this.canvas.getContext('2d') as CanvasRenderingContext2D;
     private width = this.canvas.getBoundingClientRect().width;
@@ -14,7 +13,7 @@ export class DrawService {
     }
 
     draw(...drawables: Drawable[]) {
-        drawables
+        [...drawables, ...drawables.flatMap(drawable => drawable.getChildren())]
             .filter(drawable => drawable.shouldDraw)
             .forEach(drawable => this.doDraw(drawable));
     }
@@ -70,8 +69,9 @@ export class DrawService {
     private doDraw(drawable: Drawable) {
         this.context.beginPath();
         const scale = drawable.scale;
+        this.context.globalAlpha = drawable.opacity;
 
-        if (1 === 1/*FIXME*/) {
+        if (drawable.drawShape) {
             const color = drawable.color || 'red';
             this.context.strokeStyle = color;
             this.context.fillStyle = color;
@@ -106,30 +106,20 @@ export class DrawService {
         );
     }
 
-    private drawAnimatedImage(drawable: AnimatedDrawable<unknown>, image: HTMLImageElement, scale: number) {
-        const isReverse = drawable.direction === Direction.left;
-
-        if (isReverse) {
-            this.context.save();
-            this.context.translate(this.canvas.width, 0);
-            this.context.scale(-scale, scale);
-        } else {
-            this.context.save();
-            this.context.translate(0, 0);
-            this.context.scale(scale, scale);
-        }
+    private drawAnimatedImage(drawable: AnimatedDrawable, image: HTMLImageElement, scale: number) {
+        this.context.save();
+        this.context.translate(0, 0);
+        this.context.scale(scale, scale);
 
         this.context.drawImage(
             image,
             // locate frames in sprite:
-            drawable.getCurrentAnimation().x + (drawable.width * drawable.currentFrameNumber),
-            drawable.getCurrentAnimation().y,
+            drawable.framesStartPosition.x + (drawable.width * drawable.currentFrameXNumber),
+            drawable.framesStartPosition.y + (drawable.height * drawable.currentFrameYNumber),
             drawable.width,
             drawable.height,
             // where to draw it on canvas:
-            isReverse
-                ? (this.canvas.width / scale) - (drawable.x / scale) - drawable.width
-                : drawable.x / scale,
+            drawable.x / scale,
             drawable.y / scale,
             drawable.width,
             drawable.height
@@ -139,6 +129,7 @@ export class DrawService {
 
     private resetContextTransform() {
         this.context.setTransform(1, 0, 0, 1, 0, 0);
+        this.context.globalAlpha = 1;
     }
 
 }

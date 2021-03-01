@@ -1,6 +1,6 @@
 import {Service} from "typedi";
 import {AStarFinder, DiagonalMovement, Grid} from "pathfinding";
-import {Position} from "./position";
+import {Position} from "../math/position";
 import {Drawable} from "../drawing/drawable";
 
 @Service()
@@ -38,7 +38,7 @@ export class PathFinderService {
         const endPositionTile = this.canvasPositionToTilePosition(endPosition);
 
         const path = this.finder.findPath(
-            startPositionTile.x,
+            startPositionTile.x, // FIXME cache for perf
             startPositionTile.y,
             Math.min(endPositionTile.x, this.tilesPerWidth - 1),
             Math.min(endPositionTile.y, this.tilesPerHeight - 1),

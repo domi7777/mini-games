@@ -2,46 +2,31 @@ import {Drawable} from "../drawing/drawable";
 import {Position} from "../math/position";
 import {Enemy} from "../enemy/enemy";
 
+export interface MissileConfig {
+    startPosition: Position,
+    target: Enemy,
+    position?: Position,
+    endPosition?:Position
+}
+
 export class Missile extends Drawable {
     readonly speed = 6;
+    readonly startPosition: Position;
+    readonly endPosition: Position;
+    readonly target: Enemy;
 
-    constructor(
-        public readonly startPosition: Position,
-        public readonly target: Enemy,
-        public readonly position = startPosition,
-        public readonly endPosition: Position = target.center) {
+    constructor(config: MissileConfig){
         super({
-            x: position.x,
-            y: position.y,
+            x: config.position?.x || config.startPosition.x,
+            y: config.position?.y || config.startPosition.y,
             width: 5,
             height: 5,
-            color: 'yellow'
+            color: 'yellow',
+            filledWithColor: true
         });
+        this.target = config.target;
+        this.startPosition = config.startPosition;
+        this.endPosition = config.endPosition || this.target.center;
     }
 
-    move(): Missile {
-        // xy?
-        /*
-        start: x = 10, y = 10;
-        end: x = 50, y = 100;
-        speedX = end.x - start.x (40)
-        speedY = end.y - start.y (90)
-        x += (speedX
-        y += speed
-         */
-        // console.log(this.position, this.endPosition)
-        // FIXME speed is not constant (see enemy movement)
-        const speedX = ((this.endPosition.x - this.startPosition.x) / 100) * this.speed;
-        const speedY = ((this.endPosition.y - this.startPosition.y) / 100) * this.speed;
-        const minSpeed = 1;
-        // const velocity = {
-        //     x: Math.abs(speedX) < minSpeed ? (speedX < 0 ? -minSpeed : minSpeed) : speedX,
-        //     y:  Math.abs(speedY) < minSpeed ? (speedY < 0 ? -minSpeed : minSpeed) : speedY,
-        // }
-        return new Missile(
-            this.startPosition,
-            this.target,
-            {x: this.x + speedX, y: this.y + speedY}
-        );
-    }
 }

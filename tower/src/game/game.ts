@@ -1,9 +1,9 @@
 import {Service} from "typedi";
 import {animationFrameScheduler, BehaviorSubject, fromEvent, merge, Observable, of, scheduled} from "rxjs";
-import {DrawService} from "./drawing/draw-service";
+import {DrawingService} from "./drawing/drawing-service";
 import {map, repeat, startWith, tap, withLatestFrom} from "rxjs/operators";
 import {Tower} from "./tower/tower";
-import {Enemy} from "./enemy/enemy";
+import {Enemy, EnemyType} from "./enemy/enemy";
 import {Missile} from "./tower/missile";
 import {Wall} from "./wall/wall";
 import {Position} from "./math/position";
@@ -11,7 +11,7 @@ import {CollisionUtils} from "./math/collision-utils";
 import {EntryPath} from "./path/entry-path";
 import {ExitPath} from "./path/exit-path";
 
-import {PathFinderService} from "./math/path-finder.service";
+import {PathFinderService} from "./path/path-finder.service";
 import {EnemyService} from "./enemy/enemy.service";
 import {GameState} from "./game-state";
 import {Drawable} from "./drawing/drawable";
@@ -38,12 +38,17 @@ export class Game {
     private gameState$ = new BehaviorSubject<GameState>({
         missed: 0,
         enemies: [
-            new Enemy(this.entryPosition),
-            new Enemy({x: this.entryPosition.x, y: -50}),
-            new Enemy({x: this.entryPosition.x, y: -150}),
+            new Enemy({enemyType: EnemyType.bat, position: this.entryPosition}),
+            new Enemy({enemyType: EnemyType.orc, position: {x: this.entryPosition.x, y: -50}}),
+            new Enemy({enemyType: EnemyType.blob, position: {x: this.entryPosition.x, y: -150}}),
+            new Enemy({enemyType: EnemyType.bull, position: {x: this.entryPosition.x, y: -250}}),
+            new Enemy({enemyType: EnemyType.vampire, position: {x: this.entryPosition.x, y: -350}}),
+            new Enemy({enemyType: EnemyType.skeleton, position: {x: this.entryPosition.x, y: -450}}),
+            new Enemy({enemyType: EnemyType.ghost, position: {x: this.entryPosition.x, y: -550}}),
+            new Enemy({enemyType: EnemyType.succubus, position: {x: this.entryPosition.x, y: -650}}),
         ],
         towers: [
-            new Tower({x: 50, y: 150}),
+            new Tower({x: 250, y: 150}),
             new Tower({x: 250, y: 350}),
             new Tower({x: 150, y: 550}),
         ],
@@ -73,7 +78,7 @@ export class Game {
     constructor(
         private canvas: HTMLCanvasElement,
         private pathFinder: PathFinderService,
-        private drawService: DrawService,
+        private drawService: DrawingService,
         private enemyService: EnemyService
     ) {
         //setInterval(() => console.log((<any>performance).memory.usedJSHeapSize / (1000 * 1000)), 1000)
@@ -89,7 +94,6 @@ export class Game {
         [...state.walls, ...state.towers].forEach(wall => {
             this.pathFinder.setObstacle(wall);
         })
-
 
         this.frames$
             .pipe(
@@ -113,27 +117,21 @@ export class Game {
             gameState.mouseCursor,
             gameState.entry,
             gameState.exit,
-            ...gameState.enemies,
             ...gameState.walls,
             ...gameState.towers,
-            ...gameState.towers.flatMap(tower => tower.missiles),
+            ...gameState.enemies
         );
         this.drawService.drawText(`Missed: ${gameState.missed}`, {x: 10, y: 20});
-        gameState.enemies.forEach(enemy => {
-            this.drawService.drawText(enemy.lives, enemy.bottomLeft, 13);
-        })
     }
 
     private nextGameState(gameState: GameState,
                           mouseClickEvent: MouseClickEvent,
                           mouseMove: MouseEvent): GameState {
-        gameState.towers
-            .flatMap(tower => tower.missiles)
-            .filter(missile => this.areColliding(missile, missile.target))
-            .map(missile => missile.target)
-            .forEach(enemy => enemy.lives--); // fixme mutation
-
-        const {nextEnemies, missedEnemies} = this.enemyService.getNextEnemies(gameState.enemies, gameState.exit);
+        const {nextEnemies, missedEnemies} = this.enemyService.getNextEnemies(
+            gameState.enemies,
+            gameState.exit,
+            gameState.towers.flatMap(tower => tower.missiles)
+        );
         return {
             missed: gameState.missed + missedEnemies.length,
             entry: new EntryPath(gameState.entry.position, gameState.entry.dimensions),
@@ -150,6 +148,8 @@ export class Game {
                          mouseMove: MouseEvent) {
         const walls = gameState.walls.map(wall => new Wall(wall.position, wall.dimensions));
         if (!mouseClickEvent.released) {
+            // FIXME if mouse if moved "too" fast some blocks are not built
+
             const position = this.getNormalizedMousePosition(mouseMove);
             const wall = new Wall(position)
             // wall.center = position;
@@ -175,11 +175,11 @@ export class Game {
                 const enemyToShoot = tower.findEnemyToShoot(gameState.enemies);
                 const lastShootTs = enemyToShoot ? Date.now() : tower.lastShootTimestamp;
                 const missiles = enemyToShoot
-                    ? [...tower.missiles, new Missile(tower.center, enemyToShoot)]
+                    ? [...tower.missiles, new Missile({target: enemyToShoot, startPosition: tower.center})]
                     : tower.missiles;
                 const nextMissiles = missiles
                     .filter(missile => !this.isMissileDestroyed(missile, gameState.enemies))
-                    .map(missile => missile.move())
+                    .map(missile => this.getNextMissile(missile, gameState.enemies));
                 return new Tower(tower.position, lastShootTs, nextMissiles);
             });
         // if (mouseClickedEvent && towers.length < 80) {
@@ -193,19 +193,17 @@ export class Game {
     }
 
     private isMissileDestroyed(missile: Missile, enemies: Enemy[]) {
-        return missile.y > this.height
+        const b = missile.y > this.height
             || missile.y < 0
             || missile.x > this.width
             || missile.x < 0
             || missile.target.y < 0
             || missile.target.y > this.height
-            || enemies.some(enemy => this.areColliding(missile, enemy))
+            || CollisionUtils.isCollidingWith(missile, missile.target)
+        return b
     }
 
-    private areColliding(missile: Missile, enemy: Enemy) {
-        return CollisionUtils.isPointInDrawableBounds(missile.center, enemy);
-    }
-
+    // FIXME move to userInputService
     private getMousePosition(evt: MouseEvent | Touch): Position {
         const rect = this.canvas.getBoundingClientRect();
         return {
@@ -228,5 +226,26 @@ export class Game {
         wall.color = this.isEnemiesPathBroken(gameState, wall) ? 'red' : 'green';
         wall.filledWithColor = false;
         return wall;
+    }
+
+    private getNextMissile(missile: Missile, enemies: Enemy[]): Missile {
+        // FIXME speed not constant
+        const speedX = ((missile.endPosition.x - missile.startPosition.x) / 100) * missile.speed;
+        const speedY = ((missile.endPosition.y - missile.startPosition.y) / 100) * missile.speed;
+        const minSpeed = 1;
+        // const velocity = {
+        //     x: Math.abs(speedX) < minSpeed ? (speedX < 0 ? -minSpeed : minSpeed) : speedX,
+        //     y:  Math.abs(speedY) < minSpeed ? (speedY < 0 ? -minSpeed : minSpeed) : speedY,
+        // }
+        const target = enemies.find(enemy => enemy.id === missile.target.id);
+        if (!target) {
+            throw new Error('no target')
+        }
+        return new Missile({
+            startPosition: missile.startPosition,
+            position: {x: missile.x + speedX, y: missile.y + speedY},
+            target: target
+        });
+
     }
 }

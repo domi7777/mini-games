@@ -4,6 +4,11 @@ import {Position} from "./position";
 
 export abstract class CollisionUtils {
 
+    static isCollidingWith(drawable1: Drawable, drawable2: Drawable): boolean {
+        return this.isPointInDrawableBounds(drawable1.center, drawable2)
+            || this.isPointInDrawableBounds(drawable2.center, drawable1)
+    }
+
     static isPointInDrawableBounds(point: Position, drawable: Drawable) {
         return point.x < drawable.x + drawable.width * drawable.scale
             && point.x > drawable.x

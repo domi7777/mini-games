@@ -2,6 +2,7 @@ import {Drawable} from "../drawing/drawable";
 import {Missile} from "./missile";
 import {Enemy} from "../enemy/enemy";
 import {Position} from "../math/position";
+import {override} from "../utils/override.decorator";
 
 export class Tower extends Drawable {
 
@@ -22,6 +23,11 @@ export class Tower extends Drawable {
             color: 'green',
             filledWithColor: true
         });
+    }
+
+    @override()
+    getChildren(): Drawable[] {
+        return this.missiles;
     }
 
     findEnemyToShoot(enemies: Enemy[]): Enemy | null {
