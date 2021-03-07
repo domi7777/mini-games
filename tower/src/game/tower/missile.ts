@@ -1,5 +1,5 @@
 import {Drawable} from "../drawing/drawable";
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
 import {Enemy} from "../enemy/enemy";
 
 export interface MissileConfig {

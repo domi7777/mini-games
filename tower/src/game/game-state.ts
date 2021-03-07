@@ -5,12 +5,19 @@ import {EntryPath} from "./path/entry-path";
 import {ExitPath} from "./path/exit-path";
 import {Drawable} from "./drawing/drawable";
 
+export enum MapObjectType {
+    Wall = "Wall",
+    Tower = "Tower",
+}
+
 export interface GameState {
     readonly missed: number;
+    readonly killed: number;
     readonly enemies: Enemy[];
     readonly towers: Tower[];
     readonly walls: Wall[];
-    readonly entry: EntryPath;
-    readonly exit: ExitPath;
+    readonly startPoint: EntryPath;
+    readonly exitPoint: ExitPath;
     readonly mouseCursor: Drawable;
+    readonly cursorMode: MapObjectType;
 }

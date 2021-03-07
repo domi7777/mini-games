@@ -1,15 +1,18 @@
 import {Service} from "typedi";
 import {Drawable} from "./drawable";
 import {AnimatedDrawable} from "../animations/animated-drawable";
+import {GameCanvas} from "../canvas/game-canvas";
+import {BackgroundCanvas} from "../canvas/background-canvas";
 
 @Service()
 export class DrawingService {
 
     private context: CanvasRenderingContext2D = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    private backgroundContext: CanvasRenderingContext2D = this.backgroundCanvas.getContext('2d') as CanvasRenderingContext2D;
     private width = this.canvas.getBoundingClientRect().width;
     private height = this.canvas.getBoundingClientRect().height;
 
-    constructor(private canvas: HTMLCanvasElement) {
+    constructor(private canvas: GameCanvas, private backgroundCanvas: BackgroundCanvas) {
     }
 
     draw(...drawables: Drawable[]) {
@@ -29,25 +32,36 @@ export class DrawingService {
              fontFamily = 'Arial') {
         this.context.fillStyle = fontColor;
         this.context.font = `${fontSize}px '${fontFamily}'`;
-        this.wrapText(`${text}`, position.x, position.y, this.width - 50, fontSize);
+        this.writeWrappedText(`${text}`, position.x, position.y, this.width - 50, fontSize);
     }
 
     drawGrid(step: number, color: string): void {
-        this.context.strokeStyle = color;
-        this.context.beginPath();
+        this.backgroundContext.strokeStyle = color;
+        this.backgroundContext.beginPath();
         for (let x = 0; x <= this.width; x += step) {
-            this.context.moveTo(x, 0);
-            this.context.lineTo(x, this.height);
+            this.backgroundContext.moveTo(x, 0);
+            this.backgroundContext.lineTo(x, this.height);
         }
         for (let y = 0; y <= this.height; y += step) {
-            this.context.moveTo(0, y);
-            this.context.lineTo(this.width, y);
+            this.backgroundContext.moveTo(0, y);
+            this.backgroundContext.lineTo(this.width, y);
         }
-        this.context.stroke();
+        this.backgroundContext.stroke();
+    }
+
+
+    drawOnBackground(...drawables: Drawable[]) {
+        drawables.forEach(drawable => {
+            if (drawable.tileConfig) {
+                this.drawTileImage(drawable, this.backgroundContext);
+            } else {
+                this.drawImage(drawable, this.backgroundContext);
+            }
+        });
     }
 
     // credits: https://stackoverflow.com/a/27503574
-    private wrapText(text: string, x: number, y: number, maxWidth: number, lineHeight: number) {
+    private writeWrappedText(text: string, x: number, y: number, maxWidth: number, lineHeight: number): void {
         const words = text.split(' ');
         let line = '';
 
@@ -67,11 +81,11 @@ export class DrawingService {
     }
 
     private doDraw(drawable: Drawable) {
-        this.context.beginPath();
         const scale = drawable.scale;
         this.context.globalAlpha = drawable.opacity;
 
         if (drawable.drawShape) {
+            this.context.beginPath();
             const color = drawable.color || 'red';
             this.context.strokeStyle = color;
             this.context.fillStyle = color;
@@ -88,17 +102,38 @@ export class DrawingService {
         if (drawable.image) {
             if (drawable instanceof AnimatedDrawable) {
                 this.drawAnimatedImage(drawable, drawable.image, scale);
+            } else if (drawable.tileConfig) {
+                this.drawTileImage(drawable, this.context);
             } else {
-                this.drawImage(drawable, drawable.image);
+                this.drawImage(drawable, this.context);
             }
         }
 
         this.resetContextTransform();
     }
 
-    private drawImage(drawable: Drawable, image: HTMLImageElement) {
-        this.context.drawImage(
-            image,
+    private drawImage(drawable: Drawable, context: CanvasRenderingContext2D) {
+        context.drawImage(
+            <HTMLImageElement>drawable.image,
+            drawable.x,
+            drawable.y,
+            drawable.width,
+            drawable.height
+        );
+    }
+
+    private drawTileImage(drawable: Drawable, context: CanvasRenderingContext2D) {
+        if (!drawable.tileConfig) {
+            throw new Error('no tileConfig')
+        }
+        context.drawImage(
+            <HTMLImageElement>drawable.image,
+            // locate frames in sprite:
+            drawable.tileConfig.start.x,
+            drawable.tileConfig.start.y,
+            drawable.tileConfig.dimensions.width,
+            drawable.tileConfig.dimensions.height,
+            // where to draw it on canvas:
             drawable.x,
             drawable.y,
             drawable.width,

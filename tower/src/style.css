@@ -8,11 +8,33 @@ body {
     font-size: 12px;
 }
 
+main {
+    margin:auto;
+    background-image: url("../assets/ground.png");
+}
+
+#github-link {
+    position:relative;
+    top: calc(100% + 10px)
+}
+
+canvas {
+    position: absolute;
+    display:block;
+}
+
+canvas#walls {
+    z-index: 1;
+}
+
 canvas#game {
     border: 1px solid #4f4d4d;
-    /*background: #09CFFC url('../images/bg.png') no-repeat;*/
-    background-position-y: 280px;
-    background-position-x: -150px;
+    z-index: 2;
+}
+
+canvas#map {
+    top:0;
+    left:0;
 }
 
 canvas#game:hover {

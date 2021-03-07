@@ -1,111 +1,101 @@
 import {Service} from "typedi";
 import {Enemy} from "./enemy";
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
 import {PathFinderService} from "../path/path-finder.service";
 import {CollisionUtils} from "../math/collision-utils";
 import {Drawable} from "../drawing/drawable";
 import {Missile} from "../tower/missile";
 import {Direction} from "../drawing/direction.enum";
 
+type EnemiesState = {
+    nextEnemies: Enemy[],
+    missedEnemies: Enemy[],
+    killedEnemies: Enemy[];
+};
+type PositionAndDirection = { position: Position; direction: Direction };
+type XYStep = { xStep: number, yStep: number };
+
+const DirectionToFrameRow = {
+    [Direction.down]: 0,
+    [Direction.left]: 1,
+    [Direction.right]: 2,
+    [Direction.up]: 3,
+}
+
 @Service()
 export class EnemyService {
-    private readonly enemySpeed = 0.7; // === 1px per frame === 60px per sec
-
-    private directionToFrameRow = {
-        [Direction.down]: 0,
-        [Direction.left]: 1,
-        [Direction.right]: 2,
-        [Direction.up]: 3,
-    }
 
     constructor(private pathFinder: PathFinderService) {
     }
 
-    getNextEnemies(enemies: Enemy[], goal: Drawable, missiles: Missile[]): { nextEnemies: Enemy[], missedEnemies: Enemy[] } {
-        const missedEnemies = enemies.filter(enemy => CollisionUtils.isPointInDrawableBounds(enemy.center, goal))
-        const nextEnemies = enemies
-            .filter(enemy => !missedEnemies.includes(enemy))
-            .map(enemy => this.nextEnemy(enemy, goal, missiles))
-            .filter(enemy => enemy.lives > 0)
-            .sort(this.compare.bind(this))
-        return {nextEnemies, missedEnemies};
+    getNextEnemiesState(enemies: Enemy[], goal: Drawable, missiles: Missile[]): EnemiesState {
+        enemies.forEach(enemy => this.updateEnemyState(enemy, goal, missiles))
+        const missedEnemies = enemies.filter(enemy => CollisionUtils.isCollidingWith(enemy, goal))
+        const killedEnemies = enemies.filter(enemy => enemy.lives <= 0);
+        const nextEnemies = enemies.filter(enemy => ![...missedEnemies, ...killedEnemies].includes(enemy));
+        return {
+            nextEnemies,
+            missedEnemies,
+            killedEnemies
+        };
     }
 
-    private nextEnemy(enemy: Enemy, goal: Drawable, missiles: Missile[]): Enemy {
-        const hasBeenHit = !!missiles.find(missile => missile.target.id === enemy.id
+    private updateEnemyState(enemy: Enemy, goal: Drawable, missiles: Missile[]): void {
+        const hasBeenHit = !!missiles.find(missile => missile.target === enemy
             && CollisionUtils.isCollidingWith(missile, enemy))
-        const {position, direction} = this.getNextEnemyPositionAndDirection(enemy, goal.center);
-        const {currentFrameNumber, lastFrameChangeTime} = this.getNextAnimationFrames(enemy, direction);
-        return new Enemy({
-            id: enemy.id,
-            enemyType: enemy.enemyType,
-            center: position,
-            maxLives: enemy.maxLives,
-            lives: hasBeenHit ? enemy.lives - 1 : enemy.lives,
-            lastFrameChangeTime: lastFrameChangeTime,
-            currentFrameXNumber: currentFrameNumber,
-            currentFrameYNumber: this.directionToFrameRow[direction],
-            direction: direction,
-        });
+        const {position, direction} = this.getNextEnemyPositionAndDirection(enemy.center, goal.center, enemy.speed);
+        if (Date.now() > enemy.lastFrameChangeTime + 200) {
+            enemy.lastFrameChangeTime = Date.now();
+            enemy.currentFrameXNumber = enemy.currentFrameXNumber >= enemy.numberOfFrames - 1
+                ? 0
+                : enemy.currentFrameXNumber + 2; // TODO hardcoded: skip the middle frame (which is idle movement)
+        }
+        enemy.center = position;
+        if (hasBeenHit) {
+            enemy.lives--;
+        }
+        enemy.currentFrameYNumber = DirectionToFrameRow[direction];
+        enemy.direction = direction;
     }
 
-    // fixme too big
-    private getNextEnemyPositionAndDirection(enemy: Enemy, goal: Position): { position: Position, direction: Direction } {
-        const currentPosition = enemy.center;// TODO base position on center
+    private getNextEnemyPositionAndDirection(currentPosition: Position,
+                                             goal: Position, speed: number): PositionAndDirection {
         const futurePosition = this.pathFinder.findNextPathPosition(currentPosition, goal);
-
         if (!futurePosition) {
-            console.error('No path found', enemy.center, goal, this.pathFinder.getGridInfo())
+            console.error('No path found', currentPosition, goal, this.pathFinder.getGridInfo())
             throw new Error('No path found!')
         }
+        const {xStep, yStep} = this.getNextStep(currentPosition, futurePosition, speed);
+        const nextPosition: Position = {
+            x: currentPosition.x + xStep,
+            y: currentPosition.y + yStep
+        };
+        const direction = this.getNextDirection(xStep, yStep);
+        return {position: nextPosition, direction: direction};
+    }
 
-        // Pytagore to the rescue
+    private getNextStep(currentPosition: Position, futurePosition: Position, speed: number): XYStep {
+        // Pythagore to the rescue
         const width = futurePosition.x - currentPosition.x + 5 /*FIXME hardcoded to direct to center of grid square*/;
         const height = futurePosition.y - currentPosition.y;
-        if (width === 0 && height === 0) {
-            return {position: goal, direction: Direction.right};
-        }
 
         const diagonal = Math.sqrt(width ** 2 + height ** 2);
 
         // width / diagonal === newWidth / stepSize => stepSize * width / diagonal
-        const xStep = this.enemySpeed * width / diagonal;
-        const yStep = this.enemySpeed * height / diagonal;
-
-        const nextPosition = {
-            x: currentPosition.x + xStep,
-            y: currentPosition.y + yStep
-        };
-        if (isNaN(nextPosition.x)) {
-            throw new Error('isNan')
+        const xStep = speed * width / diagonal;
+        const yStep = speed * height / diagonal;
+        if (isNaN(xStep)) {
+            throw new Error('xStep isNan')
         }
-        const direction = this.getNextDirection(xStep, yStep);
-
-        return {position: nextPosition, direction: direction};
-    }
-
-
-    private compare(enemy1: Enemy, enemy2: Enemy): number {
-        return enemy1.y < enemy2.y ? -1 : enemy1.y > enemy2.y ? 1 : 0
-    }
-
-    // FIXME put in super?
-    private getNextAnimationFrames(enemy: Enemy, direction: Direction) {
-        if (Date.now() > enemy.lastFrameChangeTime + 200) {
-            return {
-                currentFrameNumber: enemy.currentFrameXNumber >= enemy.numberOfFrames - 1 ? 0 : enemy.currentFrameXNumber + 2,
-                lastFrameChangeTime: Date.now()
-            }
+        if (isNaN(yStep)) {
+            throw new Error('yStep isNan')
         }
-        return {
-            currentFrameNumber: enemy.currentFrameXNumber,
-            lastFrameChangeTime: enemy.lastFrameChangeTime
-        }
+        return {xStep, yStep};
     }
 
     private getNextDirection(xStep: number, yStep: number): Direction {
-        const isLateral = Math.abs(xStep) > Math.abs(yStep);
-        if (isLateral) {
+        const isHorizontalMovementBigger = Math.abs(xStep) > Math.abs(yStep);
+        if (isHorizontalMovementBigger) {
             return xStep > 0 ? Direction.right : Direction.left;
         }
         return yStep > 0 ? Direction.down : Direction.up

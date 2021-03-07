@@ -1,6 +1,6 @@
 import {Drawable, DrawableConfig} from "../drawing/drawable";
 import {Direction} from "../drawing/direction.enum";
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
 
 export interface AnimatedDrawableConfig extends DrawableConfig {
     framesStartPosition: Position,
@@ -12,12 +12,12 @@ export interface AnimatedDrawableConfig extends DrawableConfig {
 }
 
 export abstract class AnimatedDrawable extends Drawable {
-    readonly currentFrameXNumber: number;
-    readonly currentFrameYNumber: number;
-    readonly lastFrameChangeTime: number;
+    currentFrameXNumber: number;
+    currentFrameYNumber: number;
+    lastFrameChangeTime: number;
     readonly numberOfFrames: number;
     readonly framesStartPosition: Position;
-    readonly direction?: Direction;
+    direction?: Direction;
 
     protected constructor(config: AnimatedDrawableConfig) {
         super(config);

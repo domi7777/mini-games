@@ -1,5 +1,5 @@
 import {Drawable} from "../drawing/drawable";
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
 import {Dimension} from "../math/dimension";
 
 export class EntryPath extends Drawable {
@@ -12,9 +12,11 @@ export class EntryPath extends Drawable {
             width: dimensions.width,
             height: dimensions.height,
             image: null,
+            filledWithColor: false,
             x: position.x,
             y: position.y,
-            color: 'green'
+            color: 'grey',
+            opacity: 0
         });
     }
 }

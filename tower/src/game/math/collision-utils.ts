@@ -1,5 +1,5 @@
 import {Drawable} from "../drawing/drawable";
-import {Position} from "./position";
+import {Position} from "./position/position";
 
 
 export abstract class CollisionUtils {

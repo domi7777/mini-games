@@ -1,4 +1,4 @@
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
 import {AnimatedDrawable} from "../animations/animated-drawable";
 import {Direction} from "../drawing/direction.enum";
 import {Drawable} from "../drawing/drawable";
@@ -49,13 +49,11 @@ interface EnemyConfig {
 }
 
 export class Enemy extends AnimatedDrawable {
-    private static _id = 0; // TODO use real id generation
+    readonly speed = 0.7; // 1px per frame === 60px per sec
 
-    readonly id: number;
-    readonly speed = 1;
     readonly scoreValue: number = 100;
     readonly maxLives: number;
-    readonly lives: number;
+    lives: number;
     readonly enemyType: EnemyType;
 
     constructor(config: EnemyConfig) {
@@ -74,13 +72,12 @@ export class Enemy extends AnimatedDrawable {
             x: config.position?.x || 150,
             y: config.position?.y || -15,
             direction: config.direction,
-            currentFrameXNumber: config.currentFrameXNumber,
+            currentFrameXNumber: config.currentFrameXNumber, // FIXME remove useless stuff
             currentFrameYNumber: config.currentFrameYNumber,
             lastFrameChangeTime: config.lastFrameChangeTime,
         });
         this.maxLives = config.maxLives || 10;
         this.lives = (config.lives !== undefined) ? config.lives : this.maxLives;
-        this.id = config.id || Enemy.nextId()
         if (config.center) {
             this.center = config.center; // FIXME make everything use center position by default
         }
@@ -120,9 +117,5 @@ export class Enemy extends AnimatedDrawable {
                 opacity: opacity
             }),
         ]
-    }
-
-    private static nextId() {
-        return ++this._id;
     }
 }

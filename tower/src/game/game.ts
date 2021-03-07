@@ -1,25 +1,29 @@
 import {Service} from "typedi";
 import {animationFrameScheduler, BehaviorSubject, fromEvent, merge, Observable, of, scheduled} from "rxjs";
 import {DrawingService} from "./drawing/drawing-service";
-import {map, repeat, startWith, tap, withLatestFrom} from "rxjs/operators";
-import {Tower} from "./tower/tower";
+import {distinctUntilChanged, map, repeat, startWith, tap, withLatestFrom} from "rxjs/operators";
 import {Enemy, EnemyType} from "./enemy/enemy";
-import {Missile} from "./tower/missile";
 import {Wall} from "./wall/wall";
-import {Position} from "./math/position";
-import {CollisionUtils} from "./math/collision-utils";
+import {Position} from "./math/position/position";
 import {EntryPath} from "./path/entry-path";
 import {ExitPath} from "./path/exit-path";
 
 import {PathFinderService} from "./path/path-finder.service";
 import {EnemyService} from "./enemy/enemy.service";
-import {GameState} from "./game-state";
-import {Drawable} from "./drawing/drawable";
+import {GameState, MapObjectType} from "./game-state";
 import {MouseClickEvent} from "./utils/mouse-click.event";
+import {PositionComparator} from "./math/position/position-comparator";
+import {WallService} from "./wall/wall-service";
+import {TowerService} from "./tower/tower-service";
+import {GameCanvas} from "./canvas/game-canvas";
+import {Constants} from "./constants";
+import {MapService} from "./map/map-service";
+import {Tower} from "./tower/tower";
+
 
 @Service()
 export class GameConfiguration {
-
+    // TODO
 }
 
 @Service()
@@ -30,13 +34,14 @@ export class Game {
         out: 'out-game',
     }
 
-    private readonly entryPosition: Position = Object.seal({x: 150, y: 0});
+    private readonly entryPosition: Position = Object.seal({x: Constants.tileSize, y: 0});
 
     private width = this.canvas.width;
     private height = this.canvas.height;
 
     private gameState$ = new BehaviorSubject<GameState>({
         missed: 0,
+        killed: 0,
         enemies: [
             new Enemy({enemyType: EnemyType.bat, position: this.entryPosition}),
             new Enemy({enemyType: EnemyType.orc, position: {x: this.entryPosition.x, y: -50}}),
@@ -47,25 +52,23 @@ export class Game {
             new Enemy({enemyType: EnemyType.ghost, position: {x: this.entryPosition.x, y: -550}}),
             new Enemy({enemyType: EnemyType.succubus, position: {x: this.entryPosition.x, y: -650}}),
         ],
-        towers: [
-            new Tower({x: 250, y: 150}),
-            new Tower({x: 250, y: 350}),
-            new Tower({x: 150, y: 550}),
-        ],
-        walls: [ // TODO define in text file/csv (excel)?
-            new Wall({x: 0, y: 150}, {height: 20, width: 280}),
-            new Wall({x: 290, y: 150}, {height: 20, width: 500}),
-            // new Wall({x: 220, y: 150}, {width: 25, height: 150}),
-            // new Wall({x: 10, y: 400}, {width: 150, height: 25}),
-        ],
-        entry: new EntryPath({x: this.entryPosition.x - 25, y: this.entryPosition.y}, {height: 10, width: 50}),
-        exit: new ExitPath({x: 300, y: this.canvas.height - 10}, {height: 10, width: 50}),
-        mouseCursor: new Wall()
+        towers: [],
+        walls: [],
+        startPoint: new EntryPath( // FIXME could be rendered on bg
+            {x: this.entryPosition.x, y: this.entryPosition.y},
+            {height: Constants.tileSize, width: Constants.tileSize * 2}
+        ),
+        exitPoint: new ExitPath(
+            {x: this.width - Constants.tileSize * 3, y: this.canvas.height - Constants.tileSize},
+            {height: Constants.tileSize, width: Constants.tileSize * 2}
+        ),
+        mouseCursor: new Wall(),
+        cursorMode: MapObjectType.Wall
     });
 
     private mouseMove$ = fromEvent<MouseEvent>(this.canvas, 'mousemove').pipe(startWith(new MouseEvent('')));
     private mouseDown$ = fromEvent<MouseEvent>(this.canvas, 'mousedown');
-    private mouseUp$ = fromEvent<MouseEvent>(document, 'mouseup'); // TODO build walls until click button released
+    private mouseUp$ = fromEvent<MouseEvent>(document, 'mouseup');
 
     private mouseClick$: Observable<MouseClickEvent> = merge(
         this.mouseUp$.pipe(map((event) => ({...event, released: true}))),
@@ -76,24 +79,34 @@ export class Game {
         .pipe(repeat());
 
     constructor(
-        private canvas: HTMLCanvasElement,
+        private canvas: GameCanvas,
         private pathFinder: PathFinderService,
         private drawService: DrawingService,
-        private enemyService: EnemyService
+        private mapService: MapService,
+        private enemyService: EnemyService,
+        private towerService: TowerService,
+        private wallService: WallService,
     ) {
         //setInterval(() => console.log((<any>performance).memory.usedJSHeapSize / (1000 * 1000)), 1000)
+
+        this.gameState$.pipe(
+            map(gameState => gameState.walls),
+            distinctUntilChanged((walls1, walls2) => walls1.length === walls2.length)
+        ).subscribe(drawables => this.drawService.drawOnBackground(...drawables))
+        this.gameState$.pipe(
+            map(gameState => gameState.towers),
+            distinctUntilChanged((towers1, towers2) => towers1.length === towers2.length)
+        ).subscribe(drawables => this.drawService.drawOnBackground(...drawables))
+
+        // this.drawService.drawGrid(this.pathFinder.tileSize, '#32367e') // FIXME could be done once on bg?
     }
 
-    start() {
+    async start() {
         console.log('starting game');
         this.canvas.classList.add(Game.GAME_CSS.in);
 
         const state = this.gameState$.getValue();
-
-        /* TODO make this somehow re-usable?*/
-        [...state.walls, ...state.towers].forEach(wall => {
-            this.pathFinder.setObstacle(wall);
-        })
+        this.pathFinder.setObstacles(state.towers); // TODO configure towers from map config png
 
         this.frames$
             .pipe(
@@ -109,143 +122,63 @@ export class Game {
             .subscribe(gameState => { // TODO combine with other observables & game state
                 this.render(gameState);
             });
+
+        // TODO put that in stage
+        const mapData = await this.mapService.getMapData();
+        const walls = mapData
+            .filter(data => data.type === MapObjectType.Wall)
+            .map(data => new Wall(data.position));
+        const towers = mapData
+            .filter(data => data.type === MapObjectType.Tower)
+            .map(data => new Tower(data.position)); // TODO towers are rendered a bit to low
+
+        this.pathFinder.setObstacles(walls);
+        this.pathFinder.setObstacles(towers);
+        this.gameState$.next({
+            ...this.gameState$.value,
+            walls: walls,
+            towers: towers
+        });
     }
 
     private render(gameState: GameState) {
-        this.drawService.drawGrid(this.pathFinder.tileSize, '#505050')
         this.drawService.draw(
             gameState.mouseCursor,
-            gameState.entry,
-            gameState.exit,
-            ...gameState.walls,
-            ...gameState.towers,
-            ...gameState.enemies
+            gameState.startPoint,
+            gameState.exitPoint,
+            ...gameState.towers.flatMap(tower => tower.getChildren()),
+            ...gameState.enemies.sort(PositionComparator.compareByYPosition()) // render top ones first
         );
+        // TODO icons: lives, money
         this.drawService.drawText(`Missed: ${gameState.missed}`, {x: 10, y: 20});
+        this.drawService.drawText(`Killed: ${gameState.killed}`, {x: 270, y: 20});
     }
 
     private nextGameState(gameState: GameState,
                           mouseClickEvent: MouseClickEvent,
                           mouseMove: MouseEvent): GameState {
-        const {nextEnemies, missedEnemies} = this.enemyService.getNextEnemies(
+        const {nextEnemies, missedEnemies, killedEnemies} = this.enemyService.getNextEnemiesState(
             gameState.enemies,
-            gameState.exit,
+            gameState.exitPoint,
             gameState.towers.flatMap(tower => tower.missiles)
         );
+
+        // FIXME duplicated code
+        const mouseCursor = gameState.cursorMode === MapObjectType.Tower // FIXME
+            ? this.wallService.getWallMouseCursor(mouseMove, gameState)
+            : this.towerService.getTowerMouseCursor(mouseMove, gameState)
+
         return {
             missed: gameState.missed + missedEnemies.length,
-            entry: new EntryPath(gameState.entry.position, gameState.entry.dimensions),
-            exit: new ExitPath(gameState.exit.position, gameState.exit.dimensions),
-            towers: this.getNextTowers(gameState, mouseClickEvent),
+            killed: gameState.killed + killedEnemies.length,
+            startPoint: new EntryPath(gameState.startPoint.position, gameState.startPoint.dimensions),
+            exitPoint: new ExitPath(gameState.exitPoint.position, gameState.exitPoint.dimensions),
             enemies: nextEnemies,
-            walls: this.getNextWalls(gameState, mouseClickEvent, mouseMove),
-            mouseCursor: this.getWallMouseCursor(mouseMove, gameState)
+            towers: this.towerService.getNextTowers(gameState, mouseClickEvent, mouseMove),
+            walls: this.wallService.getNextWalls(gameState, mouseClickEvent, mouseMove),
+            mouseCursor: mouseCursor,
+            cursorMode: gameState.cursorMode
         };
     }
 
-    private getNextWalls(gameState: GameState,
-                         mouseClickEvent: MouseClickEvent,
-                         mouseMove: MouseEvent) {
-        const walls = gameState.walls.map(wall => new Wall(wall.position, wall.dimensions));
-        if (!mouseClickEvent.released) {
-            // FIXME if mouse if moved "too" fast some blocks are not built
-
-            const position = this.getNormalizedMousePosition(mouseMove);
-            const wall = new Wall(position)
-            // wall.center = position;
-
-            if (this.isEnemiesPathBroken(gameState, wall)) {
-                return walls;
-            } else {
-                this.pathFinder.setObstacle(wall);
-                return [wall, ...walls];
-            }
-        }
-        return walls;
-    }
-
-
-    private isEnemiesPathBroken(gameState: GameState, wall: Wall) {
-        return gameState.enemies.some(enemy => this.pathFinder.isObstacleBreakingPath(wall, enemy.center, gameState.exit.center));
-    }
-
-    private getNextTowers(gameState: GameState, mouseClickedEvent: MouseEvent | null) {
-        const towers = gameState.towers
-            .map(tower => {
-                const enemyToShoot = tower.findEnemyToShoot(gameState.enemies);
-                const lastShootTs = enemyToShoot ? Date.now() : tower.lastShootTimestamp;
-                const missiles = enemyToShoot
-                    ? [...tower.missiles, new Missile({target: enemyToShoot, startPosition: tower.center})]
-                    : tower.missiles;
-                const nextMissiles = missiles
-                    .filter(missile => !this.isMissileDestroyed(missile, gameState.enemies))
-                    .map(missile => this.getNextMissile(missile, gameState.enemies));
-                return new Tower(tower.position, lastShootTs, nextMissiles);
-            });
-        // if (mouseClickedEvent && towers.length < 80) {
-        //     const position = this.getMousePos(mouseClickedEvent);
-        //     const tower = new Tower(position);
-        //     tower.x -= tower.width / 2;
-        //     tower.y -= tower.height / 2;
-        //     towers.push(tower);
-        // }
-        return towers;
-    }
-
-    private isMissileDestroyed(missile: Missile, enemies: Enemy[]) {
-        const b = missile.y > this.height
-            || missile.y < 0
-            || missile.x > this.width
-            || missile.x < 0
-            || missile.target.y < 0
-            || missile.target.y > this.height
-            || CollisionUtils.isCollidingWith(missile, missile.target)
-        return b
-    }
-
-    // FIXME move to userInputService
-    private getMousePosition(evt: MouseEvent | Touch): Position {
-        const rect = this.canvas.getBoundingClientRect();
-        return {
-            x: evt.clientX - rect.left,
-            y: evt.clientY - rect.top
-        };
-    }
-
-    private getNormalizedMousePosition(evt: MouseEvent | Touch): Position {
-        const mousePosition = this.getMousePosition(evt);
-        return this.pathFinder.normalizePositionToTilePosition({
-            x: mousePosition.x - 5 /*FIXME const (grid block size)*/,
-            y: mousePosition.y - 5,
-        });
-    }
-
-    private getWallMouseCursor(mouseMove: MouseEvent, gameState: GameState): Drawable {
-        const wall = new Wall(this.getNormalizedMousePosition(mouseMove));
-        // wall.center = this.getNormalizedMousePosition(mouseMove);
-        wall.color = this.isEnemiesPathBroken(gameState, wall) ? 'red' : 'green';
-        wall.filledWithColor = false;
-        return wall;
-    }
-
-    private getNextMissile(missile: Missile, enemies: Enemy[]): Missile {
-        // FIXME speed not constant
-        const speedX = ((missile.endPosition.x - missile.startPosition.x) / 100) * missile.speed;
-        const speedY = ((missile.endPosition.y - missile.startPosition.y) / 100) * missile.speed;
-        const minSpeed = 1;
-        // const velocity = {
-        //     x: Math.abs(speedX) < minSpeed ? (speedX < 0 ? -minSpeed : minSpeed) : speedX,
-        //     y:  Math.abs(speedY) < minSpeed ? (speedY < 0 ? -minSpeed : minSpeed) : speedY,
-        // }
-        const target = enemies.find(enemy => enemy.id === missile.target.id);
-        if (!target) {
-            throw new Error('no target')
-        }
-        return new Missile({
-            startPosition: missile.startPosition,
-            position: {x: missile.x + speedX, y: missile.y + speedY},
-            target: target
-        });
-
-    }
 }

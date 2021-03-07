@@ -1,4 +1,5 @@
-import {Position} from "../math/position";
+import {Position} from "../math/position/position";
+import {Dimension} from "../math/dimension";
 
 export interface DrawableConfig {
     x: number,
@@ -11,9 +12,15 @@ export interface DrawableConfig {
     filledWithColor?: boolean;
     drawShape?: boolean;
     opacity?: number
+    tileConfig?: TileConfig;
 }
 
-export abstract class Drawable {
+export interface TileConfig {
+    start: Position;
+    dimensions: Dimension;
+}
+
+export abstract class Drawable implements Position, Dimension {
     shouldDraw = true;
     position: Position;
     width: number;
@@ -24,6 +31,7 @@ export abstract class Drawable {
     filledWithColor?: boolean;
     drawShape = true;
     opacity = 1;
+    tileConfig?: TileConfig;
 
     protected constructor(config: DrawableConfig) {
         this.position = {x: config.x, y: config.y}
@@ -42,6 +50,7 @@ export abstract class Drawable {
         if (config.opacity !== undefined) {
             this.opacity = config.opacity;
         }
+        this.tileConfig = config.tileConfig;
     }
 
     getChildren(): Drawable[] {
@@ -135,5 +144,13 @@ export abstract class Drawable {
         }
     }
 
+    asPositionAndDimension(): Dimension & Position {
+        return {
+            y: this.y,
+            x: this.x,
+            width: this.width,
+            height: this.height
+        }
+    }
 
 }
