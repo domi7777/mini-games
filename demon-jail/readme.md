@@ -1,7 +1,14 @@
-# Tower defense
-Place your walls to prevent the mouses from getting away and to redirect them to the cat towers to kill them!
+# [Demon Jail](https://domi7777.github.io/mini-games/tower/dist/)
+Welcome to demon jail!
 
-Get rid of mouse army before they get to the cheese by redirecting them to the cat towers!
+Unfortunately, we have a breach, and some creatures are trying to escape.
+
+Build towers and make sure no one survives!
+
+Killing foes earn you money, which you can use to build more towers
+You lose lives when a foe escapes.
+
+[Play](https://domi7777.github.io/mini-games/tower/dist/)
 
 ## Stack:
 - Typescript
@@ -14,18 +21,14 @@ Get rid of mouse army before they get to the cheese by redirecting them to the c
 - publish & test on mobile
 - Stages
   - Let user build towers and walls before starting game
-- score => money
 - HUD to switch tower/wall construction?
   - or let user build walls only and upgrade towers?
   - or let user build towers only and pre-render walls(csv)?
   - walls: cheap => money based or number based?
   - tower: expensive? => same
-- Walls
-  - texture
 - Enemies
     - batches
 - Towers
-    - types
     - upgrades
 ## Improvements
 
