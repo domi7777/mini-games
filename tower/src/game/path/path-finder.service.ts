@@ -22,13 +22,17 @@ export class PathFinderService {
         new Array(this.tilesPerWidth).fill(0)
     )
 
-    readonly grid = new Grid(this.board)
+    grid = new Grid(this.board)
     private readonly finder = new AStarFinder({
         diagonalMovement: DiagonalMovement.OnlyWhenNoObstacles
     });
 
     constructor(private canvas: GameCanvas, private cacheManager: CacheManager) {
         console.log({xTiles: this.tilesPerWidth, yTiles: this.tilesPerHeight}, this.grid)
+    }
+
+    resetGrid(): void {
+        this.grid = new Grid(this.board);
     }
 
     findNextPathPosition(startPosition: Position, endPosition: Position, grid?: Grid): Position | null {

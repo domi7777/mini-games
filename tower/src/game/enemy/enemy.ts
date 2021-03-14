@@ -3,6 +3,7 @@ import {AnimatedDrawable} from "../animations/animated-drawable";
 import {Direction} from "../drawing/direction.enum";
 import {Drawable} from "../drawing/drawable";
 import {override} from "../utils/override.decorator";
+import {Constants} from "../constants";
 
 const sprites = require('../../../assets/monsters.png') // 48 x 72
 
@@ -35,7 +36,8 @@ const spriteFramesConfig = {
 
 const defaultEnemyType = EnemyType.blob;
 
-interface EnemyConfig {
+export interface EnemyConfig {
+    spawnDelay: number,
     position?: Position,
     center?: Position,
     maxLives?: number,
@@ -46,21 +48,21 @@ interface EnemyConfig {
     lastFrameChangeTime?: number;
     direction?: Direction;
     enemyType?: EnemyType;
+    scoreValue?: number;
 }
 
 export class Enemy extends AnimatedDrawable {
     readonly speed = 0.7; // 1px per frame === 60px per sec
-
-    readonly scoreValue: number = 100;
+    readonly scoreValue: number;
     readonly maxLives: number;
-    lives: number;
     readonly enemyType: EnemyType;
+    readonly spawnDelay: number;
+    lives: number;
 
     constructor(config: EnemyConfig) {
         super({
             height: 72,
             width: 48,
-            // image: null,
             color: 'red',
             image: sprites, // TODO config
             scale: 0.6,
@@ -69,12 +71,12 @@ export class Enemy extends AnimatedDrawable {
                 ? spriteFramesConfig[config.enemyType]
                 : spriteFramesConfig[defaultEnemyType],
             numberOfFrames: 3,
-            x: config.position?.x || 150,
+            x: config.position?.x || Constants.tileSize * 2,
             y: config.position?.y || -15,
             direction: config.direction,
             currentFrameXNumber: config.currentFrameXNumber, // FIXME remove useless stuff
             currentFrameYNumber: config.currentFrameYNumber,
-            lastFrameChangeTime: config.lastFrameChangeTime,
+            lastFrameChangeTime: config.lastFrameChangeTime
         });
         this.maxLives = config.maxLives || 10;
         this.lives = (config.lives !== undefined) ? config.lives : this.maxLives;
@@ -82,6 +84,8 @@ export class Enemy extends AnimatedDrawable {
             this.center = config.center; // FIXME make everything use center position by default
         }
         this.enemyType = config.enemyType || defaultEnemyType;
+        this.spawnDelay = config.spawnDelay;
+        this.scoreValue = config.scoreValue || 100;
     }
 
     @override()

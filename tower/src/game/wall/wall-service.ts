@@ -34,6 +34,7 @@ export class WallService {
         return gameState.walls;
     }
 
+    // FIXME duplication with towerService
     getWallMouseCursor(mouseMove: MouseEvent, gameState: GameState): Drawable {
         const position = this.userInputService.getNormalizedMousePosition(mouseMove);
         const wall = gameState.cursorMode === MapObjectType.Wall

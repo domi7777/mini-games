@@ -11,11 +11,12 @@ export enum MapObjectType {
 }
 
 export interface GameState {
-    readonly missed: number;
-    readonly killed: number;
-    readonly enemies: Enemy[];
+    readonly currentStageCreationTime: number;
     readonly towers: Tower[];
     readonly walls: Wall[];
+    readonly money: number;
+    readonly lives: number;
+    readonly enemies: Enemy[];
     readonly startPoint: EntryPath;
     readonly exitPoint: ExitPath;
     readonly mouseCursor: Drawable;

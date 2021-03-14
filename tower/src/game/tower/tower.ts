@@ -8,15 +8,32 @@ import {Constants} from "../constants";
 
 const sprites = require('../../../assets/towers.png')
 
+export enum TowerType {
+    basic = "basic"
+}
+
+export interface TowerConfig {
+    cost: number
+}
+
+type TowerConfigs = {
+    [type in TowerType]: TowerConfig;
+};
+
+export const TowerConfigs: TowerConfigs = {
+    [TowerType.basic]: {cost: 100}
+}
+
 export class Tower extends Drawable {
 
     public readonly reloadTime = 1000;
     public readonly shootingRadius = 120;
+    public lastShootTimestamp = 0;
+    public missiles: Missile[] = []
 
     constructor(
+        public readonly type = TowerType.basic,
         public position: Position = {x: 0, y: 0},
-        public lastShootTimestamp = 0,
-        public missiles: Missile[] = []
     ) {
         super({
             height: Constants.tileSize * 3,
@@ -45,6 +62,10 @@ export class Tower extends Drawable {
                 .find(enemy => this.isInRadius(enemy.center)) || null;
         }
         return null;
+    }
+
+    get price(): number {
+        return TowerConfigs[this.type].cost;
     }
 
     private isInRadius(center: Position): boolean {

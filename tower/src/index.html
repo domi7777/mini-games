@@ -3,12 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="user-scalable=no,initial-scale=1.0,maximum-scale=1.0"/>
-    <title>Tower</title>
+    <title>Demon jail</title>
     <link href="https://fonts.googleapis.com/css?family=Press+Start+2P" rel="stylesheet" type="text/css">
+    <link rel="icon" href="favicon.ico" type="image/ico">
 </head>
 <body>
 <main id="container">
-    <!--<canvas id="HUD"></canvas>-->
+    <div class="hud top">
+        <span class="lives">0</span>
+        <span class="money">0</span>
+    </div>
+    <div id="overlay">
+        <!-- screen 1 -->
+        <div id="instructions">
+            <h1>Instructions</h1>
+            <p>Welcome to demon jail!</p>
+            <p>Unfortunately, we have a breach and some creatures are trying to escape.</p>
+            <p>Build towers and make sure no one survives!</p>
+            <ul>
+                <li>Killing foes earn you money (<span class="money"></span>), which you can use to build more towers
+                </li>
+                <li>You lose lives (<span class="lives"></span>) when a foe escapes.</li>
+            </ul>
+            <h3><a id="start-button">Click here to start</a></h3>
+        </div>
+        <!-- screen 2 -->
+        <div id="stage-selection">
+            <h1>Select stage</h1>
+            <ul id="stages">
+               <!-- content is dynamically generated -->
+            </ul>
+        </div>
+        <!-- screen 3 -->
+        <div id="difficulty-selection">
+            <h1>Difficulty</h1>
+            <ul>
+                <li>
+                    <span class="trophies"><span class="trophy-bronze"></span></span>
+                    <a class="difficulty-select-button" data-difficulty="easy">Piece of cake</a>
+                </li>
+                <li>
+                    <span class="trophies"><span class="trophy-silver"></span></span>
+                    <a class="difficulty-select-button" data-difficulty="medium">Let's rock</a>
+                </li>
+                <li>
+                    <span class="trophies"><span class="trophy-gold"></span></span>
+                    <a class="difficulty-select-button" data-difficulty="hard">Come get some</a>
+                </li>
+            </ul>
+
+        </div>
+
+        <!-- stage titles -->
+        <div id="titles">
+            <h1></h1>
+            <h3></h3>
+            <div></div>
+        </div>
+
+
+    </div>
     <canvas id="game"></canvas>
     <canvas id="walls"></canvas>
     <canvas id="map"></canvas>

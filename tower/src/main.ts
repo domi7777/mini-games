@@ -12,7 +12,8 @@ require('../node_modules/pathfinding/visual/lib/pathfinding-browser.min.js');
 
 (async () => {
     const container = document.querySelector('#container') as HTMLElement;
-    container.style.width = `${Constants.gameWidth}px`;
+    const hud = document.querySelector('.hud') as HTMLElement;
+    container.style.width = hud.style.width = `${Constants.gameWidth}px`;
     container.style.height = `${Constants.gameHeight}px`;
 
     const gameCanvas = document.querySelector('#game') as HTMLCanvasElement;
@@ -24,5 +25,5 @@ require('../node_modules/pathfinding/visual/lib/pathfinding-browser.min.js');
     Container.set(GameCanvas, gameCanvas);
     Container.set(BackgroundCanvas, wallsCanvas);
 
-    Container.get(Game).start();
+    await Container.get(Game).run();
 })();

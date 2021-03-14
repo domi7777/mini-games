@@ -7,10 +7,10 @@ import {BackgroundCanvas} from "../canvas/background-canvas";
 @Service()
 export class DrawingService {
 
-    private context: CanvasRenderingContext2D = this.canvas.getContext('2d') as CanvasRenderingContext2D;
-    private backgroundContext: CanvasRenderingContext2D = this.backgroundCanvas.getContext('2d') as CanvasRenderingContext2D;
-    private width = this.canvas.getBoundingClientRect().width;
-    private height = this.canvas.getBoundingClientRect().height;
+    private readonly context: CanvasRenderingContext2D = this.canvas.getContext('2d') as CanvasRenderingContext2D;
+    private readonly backgroundContext: CanvasRenderingContext2D = this.backgroundCanvas.getContext('2d') as CanvasRenderingContext2D;
+    private readonly width = this.canvas.getBoundingClientRect().width;
+    private readonly height = this.canvas.getBoundingClientRect().height;
 
     constructor(private canvas: GameCanvas, private backgroundCanvas: BackgroundCanvas) {
     }
@@ -23,6 +23,11 @@ export class DrawingService {
 
     clearScreen() {
         this.context.clearRect(0, 0, this.width, this.height);
+    }
+
+
+    clearBackgroundScreen(context = this.context) {
+        this.backgroundContext.clearRect(0, 0, this.width, this.height);
     }
 
     drawText(text: string | number,
@@ -95,7 +100,6 @@ export class DrawingService {
                 : this.context.strokeRect.bind(this.context);
 
             drawMethod(drawable.x, drawable.y, drawable.width * drawable.scale, drawable.height * drawable.scale);
-
             this.context.stroke();
         }
 

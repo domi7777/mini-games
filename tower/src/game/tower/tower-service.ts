@@ -1,7 +1,7 @@
 import {Service} from "typedi";
 import {GameState, MapObjectType} from "../game-state";
 import {Missile} from "./missile";
-import {Tower} from "./tower";
+import {Tower, TowerConfigs, TowerType} from "./tower";
 import {Enemy} from "../enemy/enemy";
 import {CollisionUtils} from "../math/collision-utils";
 import {GameCanvas} from "../canvas/game-canvas";
@@ -19,48 +19,63 @@ export class TowerService {
     constructor(private canvas: GameCanvas, private pathFinder: PathFinderService, private userInputService: UserInputService) {
     }
 
-    getNextTowers(gameState: GameState, mouseClickEvent: MouseClickEvent, mouseMove: MouseEvent) {
-        gameState.towers
-            .forEach(tower => {
-                const enemyToShoot = tower.findEnemyToShoot(gameState.enemies);
-                const lastShootTs = enemyToShoot ? Date.now() : tower.lastShootTimestamp;
-                const missiles = enemyToShoot
-                    ? [...tower.missiles, new Missile({target: enemyToShoot, startPosition: tower.center})]
-                    : tower.missiles;
-                const nextMissiles: Missile[] = <Missile[]>missiles
-                    .filter(missile => !this.isMissileDestroyed(missile, gameState.enemies))
-                    .map(missile => this.getNextMissile(missile, gameState.enemies))
-                    .filter(missile => missile !== null);
-                tower.lastShootTimestamp = lastShootTs;
-                tower.missiles = nextMissiles;
-            });
-        if (!mouseClickEvent.released /*TODO and is adding towers mode*/) {
+    getTowerMouseCursor(mouseMove: MouseEvent, gameState: GameState): Drawable {
+        const position = this.userInputService.getNormalizedMousePosition(mouseMove);
+        const towerType = TowerType.basic; // fixme param?
+        const nextTower = gameState.cursorMode === MapObjectType.Tower
+            ? <Tower>gameState.mouseCursor
+            : new Tower();
+        // wall.center = this.getNormalizedMousePosition(mouseMove);
+        nextTower.position = position;
+        const canConstructTower = !this.isEnemiesPathBroken(gameState, nextTower)
+            && gameState.towers.every(tower => !CollisionUtils.isCollidingWith(tower, nextTower))
+            && gameState.money >= TowerConfigs[towerType].cost;
+        nextTower.color = canConstructTower ? 'green' : 'red';
+        nextTower.filledWithColor = true;
+        nextTower.opacity = 0.5;
+        return nextTower;
+    }
+
+    getNextTowers(gameState: GameState, mouseClickEvent: MouseClickEvent, mouseMove: MouseEvent): Tower[] {
+        gameState.towers.forEach(tower => {
+            const {lastShootTs, nextMissiles} = this.getNextMissiles(tower, gameState);
+            tower.lastShootTimestamp = lastShootTs;
+            tower.missiles = nextMissiles;
+        });
+        return this.doGetNextTowers(mouseClickEvent, gameState, mouseMove);
+    }
+
+    private getNextMissiles(tower: Tower, gameState: GameState): { lastShootTs: number, nextMissiles: Missile[] } {
+        const enemyToShoot = tower.findEnemyToShoot(gameState.enemies);
+        const lastShootTs = enemyToShoot ? Date.now() : tower.lastShootTimestamp;
+        const missiles = enemyToShoot
+            ? [...tower.missiles, new Missile({target: enemyToShoot, startPosition: tower.center})]
+            : tower.missiles;
+        const nextMissiles: Missile[] = <Missile[]>missiles
+            .filter(missile => !this.isMissileDestroyed(missile, gameState.enemies))
+            .map(missile => this.getNextMissile(missile, gameState.enemies))
+            .filter(missile => missile !== null);
+        return {lastShootTs, nextMissiles};
+    }
+
+    private doGetNextTowers(mouseClickEvent: MouseClickEvent, gameState: GameState, mouseMove: MouseEvent): Tower[] {
+        const towerType: TowerType = TowerType.basic; // FIXME param?
+        const selectedTowerCost = TowerConfigs[towerType].cost;
+        if (!mouseClickEvent.released && gameState.cursorMode === MapObjectType.Tower && gameState.money >= selectedTowerCost) {
             const position = this.userInputService.getNormalizedMousePosition(mouseMove);
             const alreadyExist = gameState.towers
                 .map(tower => tower.position)
-                .some(existingPosition => existingPosition.x === position.x && existingPosition.y === position.y); // fixme towers are bigger
+                .some(existingPosition => existingPosition.x === position.x && existingPosition.y === position.y);
+            // fixme towers are bigger + duplication with red
             if (!alreadyExist) {
-                const tower = new Tower(position)
+                const tower = new Tower(towerType, position)
                 if (!this.isEnemiesPathBroken(gameState, tower)) {
                     this.pathFinder.setObstacle(tower);
-                    return [tower, ...gameState.towers];
+                    return [...gameState.towers, tower];
                 }
             }
         }
         return gameState.towers;
-    }
-
-    getTowerMouseCursor(mouseMove: MouseEvent, gameState: GameState): Drawable {
-        const position = this.userInputService.getNormalizedMousePosition(mouseMove);
-        const tower = gameState.cursorMode === MapObjectType.Tower
-            ? <Tower>gameState.mouseCursor
-            : new Tower();
-        // wall.center = this.getNormalizedMousePosition(mouseMove);
-        tower.position = position;
-        tower.color = this.isEnemiesPathBroken(gameState, tower) ? 'red' : 'green';
-        tower.filledWithColor = true;
-        tower.opacity = 0.5;
-        return tower;
     }
 
     private isMissileDestroyed(missile: Missile, enemies: Enemy[]) {

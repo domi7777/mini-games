@@ -1,12 +1,8 @@
 import {Service} from "typedi";
-import {animationFrameScheduler, BehaviorSubject, fromEvent, merge, Observable, of, scheduled} from "rxjs";
+import {animationFrameScheduler, fromEvent, merge, Observable, of, scheduled, Subscription} from "rxjs";
 import {DrawingService} from "./drawing/drawing-service";
 import {distinctUntilChanged, map, repeat, startWith, tap, withLatestFrom} from "rxjs/operators";
-import {Enemy, EnemyType} from "./enemy/enemy";
 import {Wall} from "./wall/wall";
-import {Position} from "./math/position/position";
-import {EntryPath} from "./path/entry-path";
-import {ExitPath} from "./path/exit-path";
 
 import {PathFinderService} from "./path/path-finder.service";
 import {EnemyService} from "./enemy/enemy.service";
@@ -16,15 +12,19 @@ import {PositionComparator} from "./math/position/position-comparator";
 import {WallService} from "./wall/wall-service";
 import {TowerService} from "./tower/tower-service";
 import {GameCanvas} from "./canvas/game-canvas";
-import {Constants} from "./constants";
 import {MapService} from "./map/map-service";
 import {Tower} from "./tower/tower";
-
-
-@Service()
-export class GameConfiguration {
-    // TODO
-}
+import {AssetsPreloaderService} from "./assets/assets-preloader-service";
+import {StageZ} from "./stage/stages/stage-z";
+import {StageService} from "./stage/stage-service";
+import {Store} from "./store";
+import {HtmlUtils} from "./utils/html-utils";
+import {OverlayService} from "./hud/overlay-service";
+import {StageDifficulty} from "./stage/stage-difficulty";
+import {StageType} from "./stage/stage-type";
+import {StageSnake} from "./stage/stages/stage-snake";
+import {Stage} from "./stage/stage";
+import {Trophy} from "./score/trophy";
 
 @Service()
 export class Game {
@@ -34,37 +34,11 @@ export class Game {
         out: 'out-game',
     }
 
-    private readonly entryPosition: Position = Object.seal({x: Constants.tileSize, y: 0});
-
-    private width = this.canvas.width;
-    private height = this.canvas.height;
-
-    private gameState$ = new BehaviorSubject<GameState>({
-        missed: 0,
-        killed: 0,
-        enemies: [
-            new Enemy({enemyType: EnemyType.bat, position: this.entryPosition}),
-            new Enemy({enemyType: EnemyType.orc, position: {x: this.entryPosition.x, y: -50}}),
-            new Enemy({enemyType: EnemyType.blob, position: {x: this.entryPosition.x, y: -150}}),
-            new Enemy({enemyType: EnemyType.bull, position: {x: this.entryPosition.x, y: -250}}),
-            new Enemy({enemyType: EnemyType.vampire, position: {x: this.entryPosition.x, y: -350}}),
-            new Enemy({enemyType: EnemyType.skeleton, position: {x: this.entryPosition.x, y: -450}}),
-            new Enemy({enemyType: EnemyType.ghost, position: {x: this.entryPosition.x, y: -550}}),
-            new Enemy({enemyType: EnemyType.succubus, position: {x: this.entryPosition.x, y: -650}}),
-        ],
-        towers: [],
-        walls: [],
-        startPoint: new EntryPath( // FIXME could be rendered on bg
-            {x: this.entryPosition.x, y: this.entryPosition.y},
-            {height: Constants.tileSize, width: Constants.tileSize * 2}
-        ),
-        exitPoint: new ExitPath(
-            {x: this.width - Constants.tileSize * 3, y: this.canvas.height - Constants.tileSize},
-            {height: Constants.tileSize, width: Constants.tileSize * 2}
-        ),
-        mouseCursor: new Wall(),
-        cursorMode: MapObjectType.Wall
-    });
+    private stages: Stage[] = [
+        new StageZ(),
+        new StageSnake(),
+        // TODO add some more
+    ]
 
     private mouseMove$ = fromEvent<MouseEvent>(this.canvas, 'mousemove').pipe(startWith(new MouseEvent('')));
     private mouseDown$ = fromEvent<MouseEvent>(this.canvas, 'mousedown');
@@ -77,68 +51,148 @@ export class Game {
     )
     private frames$ = scheduled(of(0), animationFrameScheduler)
         .pipe(repeat());
+    private gameLoopSubscription?: Subscription;
 
     constructor(
         private canvas: GameCanvas,
+        private store: Store,
         private pathFinder: PathFinderService,
         private drawService: DrawingService,
+        private assetsLoader: AssetsPreloaderService,
         private mapService: MapService,
+        private stageService: StageService,
         private enemyService: EnemyService,
         private towerService: TowerService,
         private wallService: WallService,
+        private overlayService: OverlayService
     ) {
         //setInterval(() => console.log((<any>performance).memory.usedJSHeapSize / (1000 * 1000)), 1000)
-
-        this.gameState$.pipe(
-            map(gameState => gameState.walls),
-            distinctUntilChanged((walls1, walls2) => walls1.length === walls2.length)
-        ).subscribe(drawables => this.drawService.drawOnBackground(...drawables))
-        this.gameState$.pipe(
-            map(gameState => gameState.towers),
-            distinctUntilChanged((towers1, towers2) => towers1.length === towers2.length)
-        ).subscribe(drawables => this.drawService.drawOnBackground(...drawables))
-
-        // this.drawService.drawGrid(this.pathFinder.tileSize, '#32367e') // FIXME could be done once on bg?
+        this.renderWhenStateChanges();
     }
 
-    async start() {
+    /**
+     * Starts the whole thing
+     */
+    async run() {
         console.log('starting game');
+        this.overlayService.showInstructions();
+        await this.assetsLoader.preloadAssets();
         this.canvas.classList.add(Game.GAME_CSS.in);
 
-        const state = this.gameState$.getValue();
-        this.pathFinder.setObstacles(state.towers); // TODO configure towers from map config png
+        const startButtonSelector = '#start-button';
+        const startGame = () => {
+            HtmlUtils.getHtmlElement(startButtonSelector).removeEventListener('click', startGame);
+            this.overlayService.hideInstructions();
+            this.gotoStageSelectionScreen();
+        }
+        HtmlUtils.getHtmlElement(startButtonSelector).addEventListener('click', startGame);
+    }
 
-        this.frames$
-            .pipe(
-                tap(() => this.drawService.clearScreen()),
-                withLatestFrom(
-                    this.gameState$,
-                    this.mouseClick$,
-                    this.mouseMove$,
-                ),
-                map(([_, gameState, click, mouseMove]) => this.nextGameState(gameState, click, mouseMove)),
-                tap(gameState => this.gameState$.next(gameState))
-            )
-            .subscribe(gameState => { // TODO combine with other observables & game state
-                this.render(gameState);
-            });
+    private gotoStageSelectionScreen(): void {
+        this.createGameLoop();
+        this.overlayService.showStageSelection();
+        const stagesContainer = HtmlUtils.getHtmlElement('#stages');
 
-        // TODO put that in stage
-        const mapData = await this.mapService.getMapData();
-        const walls = mapData
-            .filter(data => data.type === MapObjectType.Wall)
-            .map(data => new Wall(data.position));
-        const towers = mapData
-            .filter(data => data.type === MapObjectType.Tower)
-            .map(data => new Tower(data.position)); // TODO towers are rendered a bit to low
+        stagesContainer.innerHTML = this.stages
+            .map(stage => stage.stageType)
+            .map(stageType =>
+                `<li>
+                    <a class="stage-select-button" data-stage="${stageType}">
+                        The ${this.formatStageName(stageType)}
+                    </a> 
+                    <span class="trophies">
+                ${
+                    this.getTrophies(stageType)
+                        .map(trophy => '<span class="trophy-' + trophy + '"></span>')
+                        .join('')
+                }
+                    </span>
+                 </li>`
+            ).join('');
 
-        this.pathFinder.setObstacles(walls);
-        this.pathFinder.setObstacles(towers);
-        this.gameState$.next({
-            ...this.gameState$.value,
-            walls: walls,
-            towers: towers
-        });
+        const stageSelector = '.stage-select-button'
+        const stageButtons = HtmlUtils.getHtmlElements(stageSelector);
+
+        const stageSelected = (e: any) => {
+            const selectedStage = e.target.getAttribute('data-stage');
+            stageButtons.forEach(button => button.removeEventListener('click', stageSelected));
+            this.overlayService.hideStageSelection();
+            this.goToDifficultySelectionScreen(selectedStage);
+        }
+        stageButtons.forEach(button => button.addEventListener('click', stageSelected));
+    }
+
+    private getTrophies(stageType: StageType): Trophy[] {
+        return this.store.scores$.value[stageType] || [];
+    }
+
+    private goToDifficultySelectionScreen(selectedStage: StageType): void {
+        this.overlayService.showDifficultySelection();
+        const difficultyButtonSelector = '.difficulty-select-button'
+        const difficultyButtons = HtmlUtils.getHtmlElements(difficultyButtonSelector);
+
+        const difficultySelected = (e: any) => {
+            const selectedDifficulty = e.target.getAttribute('data-difficulty');
+            difficultyButtons.forEach(button => button.removeEventListener('click', difficultySelected));
+            this.overlayService.hideDifficultySelection();
+            this.startStage(selectedStage, selectedDifficulty);
+        }
+        difficultyButtons.forEach(button => button.addEventListener('click', difficultySelected));
+    }
+
+    private async startStage(selectedStage: StageType, selectedDifficulty: StageDifficulty): Promise<void> {
+        console.log(`Starting stage "${selectedStage}" with difficulty "${selectedDifficulty}"`);
+        const stage = this.stages.find(stage => stage.stageType === selectedStage)
+        if (!stage) {
+            throw new Error(`Stage "${selectedStage}" not found!`);
+        }
+        try {
+            await this.stageService.run(stage, selectedDifficulty);
+        } catch (e) {
+            console.warn(e);
+        }
+        this.drawService.clearBackgroundScreen();
+        console.log('stages ended');
+        this.run();
+    }
+
+    private createGameLoop() {
+        if (!this.gameLoopSubscription) {
+            this.gameLoopSubscription = this.frames$
+                .pipe(
+                    tap(() => this.drawService.clearScreen()),
+                    withLatestFrom(
+                        this.store.gameState$,
+                        this.mouseClick$,
+                        this.mouseMove$,
+                    ),
+                    map(([_, gameState, click, mouseMove]) => this.getNextGameState(gameState, click, mouseMove)),
+                    tap(gameState => this.store.gameState$.next(gameState))
+                )
+                .subscribe(gameState => this.render(gameState));
+        }
+    }
+
+    private renderWhenStateChanges() {
+        this.store.gameState$.pipe(
+            map(gameState => gameState.walls),
+            distinctUntilChanged((walls1, walls2) => walls1.length === walls2.length)
+        ).subscribe(walls => this.drawService.drawOnBackground(...walls))
+
+        this.store.gameState$.pipe(
+            map(gameState => gameState.towers),
+            distinctUntilChanged((towers1, towers2) => towers1.length === towers2.length)
+        ).subscribe(towers => this.drawService.drawOnBackground(...towers.sort(PositionComparator.compareByYPosition())));
+
+        this.store.gameState$.pipe(
+            map(gameState => gameState.lives),
+            distinctUntilChanged()
+        ).subscribe(lives => HtmlUtils.setTextOnHtmlElement('.lives', lives)); // fixme use overlayService
+
+        this.store.gameState$.pipe(
+            map(gameState => gameState.money),
+            distinctUntilChanged()
+        ).subscribe(score => HtmlUtils.setTextOnHtmlElement('.money', score));// fixme use overlayService
     }
 
     private render(gameState: GameState) {
@@ -146,39 +200,52 @@ export class Game {
             gameState.mouseCursor,
             gameState.startPoint,
             gameState.exitPoint,
-            ...gameState.towers.flatMap(tower => tower.getChildren()),
-            ...gameState.enemies.sort(PositionComparator.compareByYPosition()) // render top ones first
+            ...gameState.towers
+                .flatMap(tower => tower.getChildren()), // towers themselves are rendered on demand
+            ...gameState.enemies
+                .filter(enemy => gameState.currentStageCreationTime > enemy.spawnDelay) // filter out not yet spawn
+                .sort(PositionComparator.compareByYPosition()) // render top ones first
         );
-        // TODO icons: lives, money
-        this.drawService.drawText(`Missed: ${gameState.missed}`, {x: 10, y: 20});
-        this.drawService.drawText(`Killed: ${gameState.killed}`, {x: 270, y: 20});
     }
 
-    private nextGameState(gameState: GameState,
-                          mouseClickEvent: MouseClickEvent,
-                          mouseMove: MouseEvent): GameState {
+    private getNextGameState(gameState: GameState,
+                             mouseClickEvent: MouseClickEvent,
+                             mouseMove: MouseEvent): GameState {
         const {nextEnemies, missedEnemies, killedEnemies} = this.enemyService.getNextEnemiesState(
             gameState.enemies,
             gameState.exitPoint,
-            gameState.towers.flatMap(tower => tower.missiles)
+            gameState.towers.flatMap(tower => tower.missiles),
+            gameState.currentStageCreationTime
         );
-
-        // FIXME duplicated code
-        const mouseCursor = gameState.cursorMode === MapObjectType.Tower // FIXME
-            ? this.wallService.getWallMouseCursor(mouseMove, gameState)
-            : this.towerService.getTowerMouseCursor(mouseMove, gameState)
-
+        const rewardMoney = killedEnemies
+            .map(enemy => enemy.scoreValue)
+            .reduce((sum, score) => sum + score, 0);
+        const nextTowers = this.towerService.getNextTowers(gameState, mouseClickEvent, mouseMove);
+        const newTowerPrice = nextTowers.length > gameState.towers.length ? nextTowers[nextTowers.length - 1].price : 0;
         return {
-            missed: gameState.missed + missedEnemies.length,
-            killed: gameState.killed + killedEnemies.length,
-            startPoint: new EntryPath(gameState.startPoint.position, gameState.startPoint.dimensions),
-            exitPoint: new ExitPath(gameState.exitPoint.position, gameState.exitPoint.dimensions),
+            money: gameState.money + rewardMoney - newTowerPrice,
+            lives: gameState.lives - missedEnemies.length,
+            startPoint: gameState.startPoint,
+            exitPoint: gameState.exitPoint,
             enemies: nextEnemies,
-            towers: this.towerService.getNextTowers(gameState, mouseClickEvent, mouseMove),
+            towers: nextTowers,
             walls: this.wallService.getNextWalls(gameState, mouseClickEvent, mouseMove),
-            mouseCursor: mouseCursor,
-            cursorMode: gameState.cursorMode
+            mouseCursor: this.getNextCursor(gameState, mouseMove),
+            cursorMode: gameState.cursorMode,
+            currentStageCreationTime: gameState.currentStageCreationTime + 17 // 60 fps * 17 ~= 1000 to mimic elapsed ms
         };
     }
 
+    private getNextCursor(gameState: GameState, mouseMove: MouseEvent): Wall | Tower {
+        return gameState.cursorMode === MapObjectType.Wall
+            ? this.wallService.getWallMouseCursor(mouseMove, gameState)
+            : this.towerService.getTowerMouseCursor(mouseMove, gameState);
+    }
+
+
+    private formatStageName(stageType: StageType): string {
+        const name = stageType.toString();
+        const withFirstLetterCapitalized = name.charAt(0).toUpperCase() + name.slice(1);
+        return withFirstLetterCapitalized.split('_').join(' ');
+    }
 }
