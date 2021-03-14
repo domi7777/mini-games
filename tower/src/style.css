@@ -1,0 +1,174 @@
+body {
+    padding: 0;
+    margin: 0;
+    /*color: #bababa;*/
+    color: #d9d9d9;
+    background-color: #393939;
+    text-align: center;
+    font-family: 'Press Start 2P', sans-serif;
+    font-size: 12px;
+    line-height: 1.5em;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
+p {
+    padding-bottom: 1em;
+    padding-top: 1em;
+}
+
+main {
+    margin: auto;
+    background-image: url("../assets/ground.png");
+}
+
+#github-link {
+    position: relative;
+    top: calc(100% + 10px)
+}
+
+canvas {
+    position: absolute;
+    display: block;
+}
+
+canvas#walls {
+    z-index: 1;
+}
+
+canvas#game {
+    border: 1px solid #4f4d4d;
+    z-index: 2;
+}
+
+canvas#map {
+    top: 0;
+    left: 0;
+    display:none;
+}
+
+.lives {
+    background-image: url("../assets/heart.png");
+}
+
+.money {
+    background-image: url("../assets/coin.png");
+}
+
+.trophy-bronze {
+    background-image: url("../assets/trophy-bronze.png");
+}
+
+.trophy-silver {
+    background-image: url("../assets/trophy-silver.png");
+}
+
+.trophy-gold {
+    background-image: url("../assets/trophy-gold.png");
+}
+
+.lives, .money, .trophy-gold, .trophy-bronze, .trophy-silver {
+    background-repeat: no-repeat;
+    padding: 3px 3px 3px 20px;
+}
+
+.trophies {
+    padding-left: 1em;
+}
+
+/* ============ hud =========== */
+
+.hud {
+    position: absolute;
+    z-index: 5;
+    color: white;
+    font-size: 10px;
+    padding-top: 3px;
+}
+
+
+/** ============ overlay ================*/
+#overlay {
+    /*display:none;*/
+    transition: opacity 0.5s;
+    opacity: 0;
+    position: absolute;
+    z-index: 10;
+    background-color: rgba(0, 0 , 0, 0.4);
+}
+
+#overlay h1 {
+    padding-top: 2em;
+}
+
+#overlay a {
+    color: orange;
+}
+
+#overlay a:hover {
+    text-decoration: none;
+    color: #ffc800;
+}
+
+#overlay #titles {
+    display: none;
+    padding-top: 40%;
+}
+
+#overlay #instructions, #overlay #stage-selection, #overlay #difficulty-selection {
+    display: none;
+    text-align: left;
+    background-image: url("../assets/start-bg.png");
+    background-size: contain;
+    position: absolute;
+    height: 100%;
+    width: 100%;
+}
+
+#overlay h1, #overlay h2, #overlay h3, #overlay p {
+    padding-left: 2em;
+    padding-right: 1em;
+}
+
+#overlay #stage-selection {
+    display: none;
+}
+
+#overlay #stage-selection li, #overlay #difficulty-selection li {
+    line-height: 1.5em;
+    font-size: 1.5em;
+}
+
+#overlay #difficulty-selection li {
+    padding-top: 3em;
+    list-style: none;
+}
+
+#overlay #difficulty-selection li .trophies {
+    padding-right: 1em;
+    padding-left: 0;
+}
+
+#overlay #difficulty-selection li .trophies span {
+    background-size: cover;
+}
+
+#titles .trophy-bronze, #titles .trophy-silver, #titles .trophy-gold {
+    background-repeat: no-repeat;
+    padding: 30px 10px 10px 20px;
+    background-size: 30px;
+    background-position-x: center;
+    background-position-y: center;
+    height: 30px;
+}
+
+
+canvas#game:hover {
+    /*cursor: pointer;*/
+}
+
+canvas#game.in-game:hover {
+    /*cursor: none;*/
+}
