@@ -46,7 +46,7 @@ export class Tower extends Drawable {
             drawShape: true,
             tileConfig: {
                 start: {x: 0, y: 0},
-                dimensions: {height: 250, width: 110}
+                dimensions: {height: 121, width: 60}
             }
         });
     }
