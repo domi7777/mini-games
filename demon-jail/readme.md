@@ -17,20 +17,22 @@ You lose lives when a foe escapes.
 - Webpack
 - [PathFinding.js](https://github.com/qiao/PathFinding.js)
 
+#FIX
+- tower placement position accuracy
+
 #TODO
-- publish & test on mobile
 - Stages
-  - Let user build towers and walls before starting game
-- HUD to switch tower/wall construction?
-  - or let user build walls only and upgrade towers?
-  - or let user build towers only and pre-render walls(csv)?
-  - walls: cheap => money based or number based?
-  - tower: expensive? => same
+  - Let user build towers and walls before starting game? (grid?)
+- HUD to switch tower/wall construction
 - Enemies
     - batches
 - Towers
     - upgrades
+
 ## Improvements
+- do not remove ongoing arrows when enemy dead
+- dead animation? (no sprite)
+- tower build surface (currently taking 6 squares)
 
 ## License:
 Tiles graphics coming from:

@@ -4,7 +4,7 @@ import {Position} from "../math/position/position";
 import {PathFinderService} from "../path/path-finder.service";
 import {CollisionUtils} from "../math/collision-utils";
 import {Drawable} from "../drawing/drawable";
-import {Missile} from "../tower/missile";
+import {Missile} from "../tower/missile/missile";
 import {Direction} from "../drawing/direction.enum";
 
 type EnemiesState = {

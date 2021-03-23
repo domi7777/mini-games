@@ -6,19 +6,18 @@ import {StageType} from "../stage-type";
 import {GhostEnemy} from "../../enemy/ghost-enemy";
 import {StageDifficulty} from "../stage-difficulty";
 
-export class StageZ extends Stage {
+export class StageWhichWay extends Stage {
     protected moneyPerDifficulty = {
-        [StageDifficulty.easy]: 500,
-        [StageDifficulty.medium]: 300,
-        [StageDifficulty.hard]: 200,
+        [StageDifficulty.easy]: 1000,
+        [StageDifficulty.medium]: 500,
+        [StageDifficulty.hard]: 250,
     };
-    protected timeBetweenWaves = 10000;
 
     constructor() {
         super(
-            require('../../../../assets/stages/z.png'),
-            StageType.the_z,
-            'Add some towers'
+            require('../../../../assets/stages/which-way.png'),
+            StageType.which_way,
+            ''
         );
     }
 
@@ -26,7 +25,7 @@ export class StageZ extends Stage {
         const enemies: Enemy[] = [];
         let delay = 1000;
         enemies.push(new BatEnemy({position: this.entryPosition, spawnDelay: delay}));
-        delay += 5000;
+        delay += 2000;
         for (let i = 1; i <= 20; i++) {
             delay += 2000;
             enemies.push(new BatEnemy({position: this.entryPosition, spawnDelay: delay}));
@@ -34,7 +33,7 @@ export class StageZ extends Stage {
         delay += this.timeBetweenWaves;
 
         for (let i = 1; i <= 30; i++) {
-            delay += 1000;
+            delay += 800;
             enemies.push(new BlobEnemy({position: this.entryPosition, spawnDelay: delay}));
         }
 
@@ -45,22 +44,7 @@ export class StageZ extends Stage {
     }
 
     protected getMediumDifficultyEnemies(): Enemy[] {
-        const enemies: Enemy[] = [];
-        let delay = 1000;
-        enemies.push(new BatEnemy({position: this.entryPosition, spawnDelay: delay, maxLives: 5, scoreValue: 10}));
-        delay += 5000;
-        for (let i = 1; i <= 20; i++) {
-            delay += 1000;
-            enemies.push(new BatEnemy({position: this.entryPosition, spawnDelay: delay, maxLives: 5, scoreValue: 10,}));
-        }
-        delay += this.timeBetweenWaves;
-
-        for (let i = 1; i <= 30; i++) {
-            delay += 500;
-            enemies.push(new BlobEnemy({position: this.entryPosition, spawnDelay: delay, maxLives: 3, scoreValue: 5}));
-        }
-
-        return enemies;
+        return [];
     }
 
 

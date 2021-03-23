@@ -19,6 +19,6 @@ export interface GameState {
     readonly enemies: Enemy[];
     readonly startPoint: EntryPath;
     readonly exitPoint: ExitPath;
-    readonly mouseCursor: Drawable;
-    readonly cursorMode: MapObjectType;
+    readonly mouseCursor: Drawable | null;
+    readonly cursorMode: MapObjectType | null;
 }

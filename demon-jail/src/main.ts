@@ -1,5 +1,5 @@
 import 'reflect-metadata';
-import {Game} from './game/game';
+import {DemonJailGame} from './game/demon-jail-game';
 import Container from "typedi";
 import {GameCanvas} from "./game/canvas/game-canvas";
 import {Constants} from "./game/constants";
@@ -25,5 +25,5 @@ require('../node_modules/pathfinding/visual/lib/pathfinding-browser.min.js');
     Container.set(GameCanvas, gameCanvas);
     Container.set(BackgroundCanvas, wallsCanvas);
 
-    await Container.get(Game).run();
+    await Container.get(DemonJailGame).run();
 })();

@@ -7,16 +7,22 @@ export abstract class CollisionUtils {
     static isCollidingWith(drawable1: Drawable, drawable2: Drawable): boolean {
         return this.isPointInDrawableBounds(drawable1.center, drawable2)
             || this.isPointInDrawableBounds(drawable2.center, drawable1)
+            || this.arePointsInDrawableBounds([
+                drawable1.topLeft,
+                drawable1.topRight,
+                drawable1.bottomRight,
+                drawable1.bottomLeft
+            ], drawable2);
     }
 
-    static isPointInDrawableBounds(point: Position, drawable: Drawable) {
-        return point.x < drawable.x + drawable.width * drawable.scale
-            && point.x > drawable.x
-            && point.y < drawable.y + drawable.height * drawable.scale
-            && point.y > drawable.y
+    private static isPointInDrawableBounds(position: Position, drawable: Drawable) {
+        return position.x < drawable.x + drawable.width * drawable.scale
+            && position.x > drawable.x
+            && position.y < drawable.y + drawable.height * drawable.scale
+            && position.y > drawable.y
     }
 
-    static arePointsInDrawableBounds(points: Position[], drawable: Drawable) {
+    private static arePointsInDrawableBounds(points: Position[], drawable: Drawable) {
         return points.some(point => this.isPointInDrawableBounds(point, drawable));
     }
 

@@ -1,30 +1,31 @@
 import {Drawable} from "../drawing/drawable";
-import {Missile} from "./missile";
+import {Missile} from "./missile/missile";
 import {Enemy} from "../enemy/enemy";
 import {Position} from "../math/position/position";
 import {override} from "../utils/override.decorator";
 import {AscOrDesc, PositionComparator} from "../math/position/position-comparator";
 import {Constants} from "../constants";
 
-const sprites = require('../../../assets/towers.png')
-
 export enum TowerType {
     basic = "basic"
 }
 
 export interface TowerConfig {
-    cost: number
+    cost: number,
+    damage: number
 }
 
 type TowerConfigs = {
     [type in TowerType]: TowerConfig;
 };
 
-export const TowerConfigs: TowerConfigs = {
-    [TowerType.basic]: {cost: 100}
+export const TowerConfigs: TowerConfigs = { // TODO subclasses?
+    [TowerType.basic]: {cost: 100, damage: 1}
 }
 
 export class Tower extends Drawable {
+
+    private static sprites = require('../../../assets/towers.png')
 
     public readonly reloadTime = 1000;
     public readonly shootingRadius = 120;
@@ -38,11 +39,11 @@ export class Tower extends Drawable {
         super({
             height: Constants.tileSize * 3,
             width: Constants.tileSize * 2,
-            image: sprites,
+            image: Tower.sprites,
             x: position.x,
             y: position.y,
             color: 'green',
-            filledWithColor: true,
+            drawShape: true,
             tileConfig: {
                 start: {x: 0, y: 0},
                 dimensions: {height: 250, width: 110}
@@ -64,8 +65,13 @@ export class Tower extends Drawable {
         return null;
     }
 
+    // TODO sub classes? factory?
     get price(): number {
         return TowerConfigs[this.type].cost;
+    }
+
+    get damage(): number {
+        return TowerConfigs[this.type].damage;
     }
 
     private isInRadius(center: Position): boolean {
