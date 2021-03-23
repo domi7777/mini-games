@@ -34,16 +34,18 @@ export class StageService {
     ) {
     }
 
-    async run(stage: Stage, difficulty: StageDifficulty): Promise<void> {
-        const gameState = await this.setupNewGameState(stage);
+    async run(stage: Stage, difficulty: StageDifficulty): Promise<GameState> {
+        const gameState = await this.setupNewGameState(stage, difficulty);
         this.store.gameState$.next(gameState); // show map without enemies until titles are hidden
-        this.overlayService.showTitles(stage.title, stage.subtitle);
+        this.overlayService.showTitles(stage.name, stage.subtitle);
         await TimeUtils.waitMillis(3000);
 
         this.overlayService.hide();
         this.store.gameState$.next({
             ...gameState,
-            enemies: stage.getEnemies(difficulty)
+            enemies: stage.getEnemies(difficulty),
+            cursorMode: MapObjectType.Tower,
+            mouseCursor: new Tower()
         });
 
         return new Promise((resolve, reject) => {
@@ -52,14 +54,19 @@ export class StageService {
                 first()
             ).subscribe(async (gameState) => { // success
                 await TimeUtils.waitMillis(1000);
+                this.store.gameState$.next({
+                    ...gameState,
+                    cursorMode: null,
+                    mouseCursor: null
+                });
                 await this.showVictory(stage, gameState, difficulty);
-                resolve();
+                resolve(gameState);
             });
         });
         // FIXME fail condition
     }
 
-    private async setupNewGameState(stage: Stage) {
+    private async setupNewGameState(stage: Stage, difficulty: StageDifficulty) {
         const mapData = await this.mapService.getMapMetadata(stage);
         const walls = mapData
             .filter(data => data.type === MapObjectType.Wall)
@@ -73,13 +80,13 @@ export class StageService {
         this.pathFinder.setObstacles(walls);
         this.pathFinder.setObstacles(towers);
 
-        return this.getGameState(stage, walls, towers);
+        return this.getGameState(stage, difficulty, walls, towers);
     }
 
-    private getGameState(stage: Stage, walls: Wall[], towers: Tower[]): GameState {
+    private getGameState(stage: Stage, difficulty: StageDifficulty, walls: Wall[], towers: Tower[]): GameState {
         return {
             lives: 20,
-            money: stage.startMoney,
+            money: stage.getStartMoney(difficulty),
             enemies: [],
             startPoint: new EntryPath(
                 {x: stage.entryPosition.x, y: stage.entryPosition.y},
@@ -89,8 +96,8 @@ export class StageService {
                 {x: this.width - Constants.tileSize * 3, y: this.canvas.height - Constants.tileSize},
                 {height: Constants.tileSize, width: Constants.tileSize * 2}
             ),
-            mouseCursor: new Tower(),
-            cursorMode: MapObjectType.Tower,
+            mouseCursor: null,
+            cursorMode: null,
             walls: walls,
             towers: towers,
             currentStageCreationTime: 0
@@ -101,7 +108,7 @@ export class StageService {
         const trophy: Trophy = StageDifficulty.toTrophy(difficulty);
         this.overlayService.showTitles(
             'Victory!',
-            `Stage ${stage.title} successfully completed`,
+            `Stage ${stage.name} successfully completed`,
             `<div class="trophy-${trophy}"></div>
                 <h3><a id="victory-continue-button" style="display: none">Click here to continue</a></h3>`
         );

@@ -13,6 +13,7 @@ export interface DrawableConfig {
     drawShape?: boolean;
     opacity?: number
     tileConfig?: TileConfig;
+    rotation?: number;
 }
 
 export interface TileConfig {
@@ -32,6 +33,7 @@ export abstract class Drawable implements Position, Dimension {
     drawShape = true;
     opacity = 1;
     tileConfig?: TileConfig;
+    rotation?: number;
 
     protected constructor(config: DrawableConfig) {
         this.position = {x: config.x, y: config.y}
@@ -50,6 +52,7 @@ export abstract class Drawable implements Position, Dimension {
         if (config.opacity !== undefined) {
             this.opacity = config.opacity;
         }
+        this.rotation = config.rotation;
         this.tileConfig = config.tileConfig;
     }
 

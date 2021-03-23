@@ -49,10 +49,14 @@ export interface EnemyConfig {
     direction?: Direction;
     enemyType?: EnemyType;
     scoreValue?: number;
+    speed?: number;
 }
 
 export class Enemy extends AnimatedDrawable {
-    readonly speed = 0.7; // 1px per frame === 60px per sec
+    static readonly defaultSpeed = 5;
+    private static readonly speedMultiplier = 0.2; // to make speed param more convenient
+
+    readonly speed;// 1px per frame === 60px per sec. Is multiplied by speedMultiplier
     readonly scoreValue: number;
     readonly maxLives: number;
     readonly enemyType: EnemyType;
@@ -76,7 +80,7 @@ export class Enemy extends AnimatedDrawable {
             direction: config.direction,
             currentFrameXNumber: config.currentFrameXNumber, // FIXME remove useless stuff
             currentFrameYNumber: config.currentFrameYNumber,
-            lastFrameChangeTime: config.lastFrameChangeTime
+            lastFrameChangeTime: config.lastFrameChangeTime,
         });
         this.maxLives = config.maxLives || 10;
         this.lives = (config.lives !== undefined) ? config.lives : this.maxLives;
@@ -85,7 +89,8 @@ export class Enemy extends AnimatedDrawable {
         }
         this.enemyType = config.enemyType || defaultEnemyType;
         this.spawnDelay = config.spawnDelay;
-        this.scoreValue = config.scoreValue || 100;
+        this.speed = (config.speed || Enemy.defaultSpeed) * Enemy.speedMultiplier;
+        this.scoreValue = config.scoreValue || this.maxLives * this.speed * 1.5;
     }
 
     @override()

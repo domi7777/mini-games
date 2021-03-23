@@ -1,32 +1,35 @@
 import {Stage} from "../stage";
-import {Position} from "../../math/position/position";
-import {Constants} from "../../constants";
 import {Enemy} from "../../enemy/enemy";
 import {StageType} from "../stage-type";
+import {StageDifficulty} from "../stage-difficulty";
 
 export class StageSnake extends Stage {
-
-    readonly stageType = StageType.snake;
-    readonly entryPosition: Position = Object.seal({x: Constants.tileSize, y: 0});
-    readonly startMoney = 50000;
+    protected moneyPerDifficulty = {
+        [StageDifficulty.easy]: 500,
+        [StageDifficulty.medium]: 300,
+        [StageDifficulty.hard]: 200,
+    };
 
     constructor() {
         super(
             require('../../../../assets/stages/snake.png'),
-            'The Snake', // fixme duplicated
+            StageType.the_snake,
             ''
         );
     }
 
     protected getEasyDifficultyEnemies(): Enemy[] {
+        // FIXME
         return [];
     }
 
     protected getMediumDifficultyEnemies(): Enemy[] {
+        // FIXME
         return [];
     }
 
     protected getHardDifficultyEnemies(): Enemy[] {
+        // FIXME
         return [];
     }
 

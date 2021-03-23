@@ -9,8 +9,7 @@ export class Store {
     readonly scores$ = new BehaviorSubject<Scores>(this.getStoredScores())
 
     constructor() {
-        this.scores$
-            .subscribe(scores => localStorage.setItem('scores', JSON.stringify(scores)))
+        this.scores$.subscribe(scores => localStorage.setItem('scores', JSON.stringify(scores)));
     }
 
     private getStoredScores(): Scores {

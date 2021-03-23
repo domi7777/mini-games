@@ -130,6 +130,10 @@ export class DrawingService {
         if (!drawable.tileConfig) {
             throw new Error('no tileConfig')
         }
+        if (drawable.rotation !== undefined) {
+            this.context.setTransform(drawable.scale, 0, 0, drawable.scale, drawable.center.x, drawable.center.y);
+            this.context.rotate(drawable.rotation * Math.PI / 180);
+        }
         context.drawImage(
             <HTMLImageElement>drawable.image,
             // locate frames in sprite:
@@ -138,8 +142,8 @@ export class DrawingService {
             drawable.tileConfig.dimensions.width,
             drawable.tileConfig.dimensions.height,
             // where to draw it on canvas:
-            drawable.x,
-            drawable.y,
+            drawable.rotation ? -drawable.width : drawable.x,
+            drawable.rotation ? -drawable.height : drawable.y,
             drawable.width,
             drawable.height
         );
