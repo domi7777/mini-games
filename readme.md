@@ -8,3 +8,5 @@ They should work fine also on mobile.
 - [It's coming right for us!](https://domi7777.github.io/mini-games/its-coming-right-for-us/dist) Typescript, Webpack
 - [Demon jail (work in progress)](https://domi7777.github.io/mini-games/demon-jail/dist) Typescript, RXJS, TypeDI, Webpack, Pathfinder
 
+##Improvements
+Auto build & commit on gh-pages
