@@ -126,7 +126,7 @@ canvas#map {
 #overlay #instructions, #overlay #stage-selection, #overlay #difficulty-selection {
     display: none;
     text-align: left;
-    background-image: url("../assets/start-bg.png");
+    background-image: url("../assets/start-bg.jpg");
     background-size: contain;
     position: absolute;
     height: 100%;
