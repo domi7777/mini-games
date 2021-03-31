@@ -3,8 +3,6 @@ import {Constants} from "../constants";
 import {PathFinderService} from "../path/path-finder.service";
 import {Position} from "../math/position/position";
 import {MapObjectType} from "../game-state";
-import {Stage} from "../stage/stage";
-
 
 export interface MapMetadata {
     type: MapObjectType;
@@ -17,9 +15,8 @@ export class MapService {
     constructor(private pathFinder: PathFinderService) {
     }
 
-    async getMapMetadata(stage: Stage): Promise<MapMetadata[]> {
+    async getMapMetadata(map: HTMLImageElement): Promise<MapMetadata[]> {
         // read the stage map configuration using canvas
-        const image = stage.mapImage;
         const canvas = document.querySelector('#map') as HTMLCanvasElement;
         const xTiles = this.pathFinder.tilesPerWidth; // FIXME should be constant
         const yTiles = this.pathFinder.tilesPerHeight;
@@ -29,7 +26,7 @@ export class MapService {
         if (!context) {
             throw new Error('no context');
         }
-        context.drawImage(image, 0, 0, image.width, image.height);
+        context.drawImage(map, 0, 0, map.width, map.height);
 
         const mapObjects: MapMetadata[] = [];
         for (let xTilePosition = 0; xTilePosition < xTiles; xTilePosition++) {

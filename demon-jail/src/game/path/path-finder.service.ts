@@ -15,7 +15,7 @@ export class PathFinderService {
 
     private readonly width = this.canvas.width;
     private readonly height = this.canvas.height;
-    readonly tilesPerWidth = this.width / this.tileSize;
+    readonly tilesPerWidth = this.width / this.tileSize; // FIXME move to constants?
     readonly tilesPerHeight = this.height / this.tileSize;
 
     readonly board: Array<Array<0 | 1>> = new Array(this.tilesPerHeight).fill( // +1 because of 0 based array convenience

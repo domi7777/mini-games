@@ -1,5 +1,4 @@
 import {Service} from "typedi";
-import {Stage} from "./stage";
 import {GameState, MapObjectType} from "../game-state";
 import {Wall} from "../wall/wall";
 import {Tower, TowerType} from "../tower/tower";
@@ -17,6 +16,8 @@ import {Trophy} from "../score/trophy";
 import {StageDifficulty} from "./stage-difficulty";
 import {ScoreService} from "../score/scoreService";
 import {HtmlUtils} from "../utils/html-utils";
+import {Stage} from "./stage";
+import {StageType} from "./stage-type";
 
 @Service()
 export class StageService {
@@ -34,20 +35,21 @@ export class StageService {
     ) {
     }
 
-    async run(stage: Stage, difficulty: StageDifficulty): Promise<GameState> {
-        const gameState = await this.setupNewGameState(stage, difficulty);
+    async run(stage: Stage): Promise<GameState> {
+        const gameState = await this.setupNewGameState(stage);
         this.store.gameState$.next(gameState); // show map without enemies until titles are hidden
-        this.overlayService.showTitles(stage.name, stage.subtitle);
+        this.overlayService.showTitles(stage.title, stage.subtitle);
         await TimeUtils.waitMillis(3000);
 
         this.overlayService.hide();
         this.store.gameState$.next({
             ...gameState,
-            enemies: stage.getEnemies(difficulty),
+            enemies: stage.getEnemies(),
             cursorMode: MapObjectType.Tower,
             mouseCursor: new Tower()
         });
 
+        // TODO ==================> gameover!!!!! + refactor
         return new Promise((resolve, reject) => {
             const subscription = this.store.gameState$.pipe(
                 filter(gameState => gameState.lives > 0 && gameState.enemies.length === 0),
@@ -59,34 +61,33 @@ export class StageService {
                     cursorMode: null,
                     mouseCursor: null
                 });
-                await this.showVictory(stage, gameState, difficulty);
+                await this.showVictory(stage, gameState);
                 resolve(gameState);
             });
         });
         // FIXME fail condition
     }
 
-    private async setupNewGameState(stage: Stage, difficulty: StageDifficulty) {
-        const mapData = await this.mapService.getMapMetadata(stage);
+    private async setupNewGameState(stage: Stage) {
+        const mapData = await this.mapService.getMapMetadata(stage.map);
         const walls = mapData
             .filter(data => data.type === MapObjectType.Wall)
             .map(data => new Wall(data.position));
         const towers = mapData
             .filter(data => data.type === MapObjectType.Tower)
-            .map(data => new Tower(TowerType.basic, data.position)); // TODO towers are rendered a bit to low
+            .map(data => new Tower(TowerType.basic, data.position)); // TODO towers are rendered a bit too low
 
-        console.log(walls);
         this.pathFinder.resetGrid();
         this.pathFinder.setObstacles(walls);
         this.pathFinder.setObstacles(towers);
 
-        return this.getGameState(stage, difficulty, walls, towers);
+        return this.getNewGameState(stage, walls, towers);
     }
 
-    private getGameState(stage: Stage, difficulty: StageDifficulty, walls: Wall[], towers: Tower[]): GameState {
+    private getNewGameState(stage: Stage, walls: Wall[], towers: Tower[]): GameState {
         return {
-            lives: 20,
-            money: stage.getStartMoney(difficulty),
+            lives: stage.startLives,
+            money: stage.startMoney,
             enemies: [],
             startPoint: new EntryPath(
                 {x: stage.entryPosition.x, y: stage.entryPosition.y},
@@ -104,15 +105,15 @@ export class StageService {
         };
     }
 
-    private async showVictory(stage: Stage, gameState: GameState, difficulty: StageDifficulty): Promise<void> {
-        const trophy: Trophy = StageDifficulty.toTrophy(difficulty);
+    private async showVictory(stage: Stage, gameState: GameState): Promise<void> {
+        const trophy: Trophy = StageDifficulty.toTrophy(stage.difficulty);
         this.overlayService.showTitles(
             'Victory!',
-            `Stage ${stage.name} successfully completed`,
+            `Stage ${StageType.format(stage.type)} successfully completed`,
             `<div class="trophy-${trophy}"></div>
                 <h3><a id="victory-continue-button" style="display: none">Click here to continue</a></h3>`
         );
-        this.scoreService.setNewScore(stage.stageType, trophy);
+        this.scoreService.setNewScore(stage.type, trophy);
         await TimeUtils.waitMillis(2000);
         const button = HtmlUtils.getHtmlElement('#victory-continue-button');
         button.style.display = 'inline';

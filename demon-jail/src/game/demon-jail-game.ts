@@ -12,19 +12,19 @@ import {TowerService} from "./tower/tower-service";
 import {GameCanvas} from "./canvas/game-canvas";
 import {Tower} from "./tower/tower";
 import {AssetsPreloaderService} from "./assets/assets-preloader-service";
-import {StageZ} from "./stage/stages/stage-z";
 import {StageService} from "./stage/stage-service";
 import {Store} from "./store";
 import {HtmlUtils} from "./utils/html-utils";
 import {OverlayService} from "./hud/overlay-service";
 import {StageDifficulty} from "./stage/stage-difficulty";
 import {StageType} from "./stage/stage-type";
-import {StageSnake} from "./stage/stages/stage-snake";
-import {Stage} from "./stage/stage";
 import {Trophy} from "./score/trophy";
-import {StageWhichWay} from "./stage/stages/stage-which-way";
-import {StageAround} from "./stage/stages/stage-around";
-import {StageCross} from "./stage/stages/stage-cross";
+import {stageZConfig} from "./stage/stages/stage-z.config";
+import {Stage} from "./stage/stage";
+import {stageSnakeConfig} from "./stage/stages/stage-snake.config";
+import {stageWhichWayConfig} from "./stage/stages/stage-which-way.config";
+import {stageCrossConfig} from "./stage/stages/stage-cross.config";
+import {stageAroundConfig} from "./stage/stages/stage-around.config";
 
 @Service()
 export class DemonJailGame {
@@ -36,14 +36,14 @@ export class DemonJailGame {
 
     private quickTestStageType = StageType.cross;
 
-    private stages: Stage[] = [
-        new StageZ(),
-        new StageSnake(),
-        new StageWhichWay(),
-        new StageAround(),
-        new StageCross(),
+    private stages = [
+        stageZConfig,
+        stageSnakeConfig,
+        stageWhichWayConfig,
+        stageCrossConfig,
+        stageAroundConfig
         // TODO add some more
-    ]
+    ];
 
     private frames$ = scheduled(of(0), animationFrameScheduler)
         .pipe(repeat());
@@ -109,10 +109,15 @@ export class DemonJailGame {
         await this.assetsLoader.preloadAssets();
         this.canvas.classList.add(DemonJailGame.GAME_CSS.in);
 
-        // --> fixme only for rfl
-        //this.createGameLoop();
-        //this.startStage(this.quickTestStageType, StageDifficulty.easy);
-        // fixme <--
+        const quickTestStage = new URLSearchParams(window.location.search).get('stage');
+        if (quickTestStage) {
+            this.createGameLoop();
+            const quickTestDifficulty = new URLSearchParams(window.location.search).get('difficulty');
+            this.startStage(
+                quickTestStage as StageType,
+                quickTestDifficulty as StageDifficulty || StageDifficulty.easy
+            );
+        }
 
         const startButtonSelector = '#start-button';
         const startGame = () => {
@@ -129,13 +134,13 @@ export class DemonJailGame {
 
         stagesContainer.innerHTML = this.stages
             .map(stage =>
-                `<li>
-                    <a class="stage-select-button" data-stage="${stage.stageType}">
-                        ${stage.name}
+                `<li> <!-- TODO stage greyd out if no trophies of the previous one! -->
+                    <a class="stage-select-button" data-stage="${stage.type}">
+                        ${StageType.format(stage.type)}
                     </a> 
                     <span class="trophies">
                 ${
-                    this.getTrophies(stage.stageType)
+                    this.getStoredTrophies(stage.type)
                         .map(trophy => '<span class="trophy-' + trophy + '"></span>')
                         .join('')
                 }
@@ -155,7 +160,7 @@ export class DemonJailGame {
         stageButtons.forEach(button => button.addEventListener('click', stageSelected));
     }
 
-    private getTrophies(stageType: StageType): Trophy[] {
+    private getStoredTrophies(stageType: StageType): Trophy[] {
         return this.store.scores$.value[stageType] || [];
     }
 
@@ -176,12 +181,14 @@ export class DemonJailGame {
     private async startStage(selectedStage: StageType, selectedDifficulty: StageDifficulty): Promise<void> {
         this.createGameLoop();
         console.log(`Starting stage "${selectedStage}" with difficulty "${selectedDifficulty}"`);
-        const stage = this.stages.find(stage => stage.stageType === selectedStage)
-        if (!stage) {
+        const stageConfig = this.stages.find(stage => stage.type === selectedStage)
+        if (!stageConfig) {
             throw new Error(`Stage "${selectedStage}" not found!`);
         }
         try {
-            const gameState = await this.stageService.run(stage, selectedDifficulty);
+            const gameState = await this.stageService.run(
+                new Stage(selectedDifficulty, stageConfig)
+            );
             this.store.gameState$.next({ // empties game board
                 ...gameState,
                 towers: [],
@@ -228,7 +235,7 @@ export class DemonJailGame {
         ).subscribe(lives => HtmlUtils.setTextOnHtmlElement('.lives', lives)); // fixme use overlayService
 
         this.store.gameState$.pipe(
-            map(gameState => gameState.money),
+            map(gameState => gameState.money.toFixed(0)),
             distinctUntilChanged()
         ).subscribe(score => HtmlUtils.setTextOnHtmlElement('.money', score));// fixme use overlayService
     }
