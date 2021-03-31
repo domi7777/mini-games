@@ -6,6 +6,7 @@ body {
     text-align: center;
     font-family: 'Press Start 2P';
     font-size: 12px;
+    overflow: hidden;
 }
 
 canvas#game {

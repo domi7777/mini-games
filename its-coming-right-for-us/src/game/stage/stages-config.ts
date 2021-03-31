@@ -115,7 +115,7 @@ export const stagesConfig: StageConfig[] = [
         ]
     },
     {
-        title: 'If it looks like a duck and quacks like a duck...',
+        title: 'Please don\'t shoot the dog.',
         enemies: [
             {...horizontalRightDirectionDuck, ...greenDuck},
             {...verticalDuck, ...greenDuck, creationDelay: 2000},
@@ -145,7 +145,7 @@ export const stagesConfig: StageConfig[] = [
         ]
     },
     {
-        title: 'If it doesn\'t work, try rubber duck debugging',
+        title: 'They\'ve been here since the quack of dawn.',
         enemies: [
             {...horizontalRightDirectionDuck, ...brownDuck, y: 25},
             {...horizontalLeftDirectionDuck, ...brownDuck, y: 50},
@@ -196,7 +196,7 @@ export const stagesConfig: StageConfig[] = [
         ]
     },
     {
-        title: 'They\'ve been here since the quack of dawn.',
+        title: 'Do you like quackers?',
         enemies: [
             {...horizontalRightDirectionDuck, ...purpleDuck, y: 225},
             {...horizontalRightDirectionDuck, ...purpleDuck, y: 250},
@@ -289,7 +289,7 @@ export const stagesConfig: StageConfig[] = [
         ]
     },
     {
-        title: 'I hope you have enough ammo.',
+        title: 'Anyways, where are these going?',
         enemies: [
             ...verticalWave(purpleDuck),
             ...verticalWave(greenDuck),

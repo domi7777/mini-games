@@ -9,6 +9,7 @@ import {Duck} from "../duck/duck";
 import {StageConfig} from "./stages-config";
 import {TimeUtils} from "../utils/time-utils";
 import {EnemyConfig} from "../enemy/enemy-config";
+import {Grenade} from "../grenade";
 
 export class Stage {
 
@@ -27,7 +28,9 @@ export class Stage {
     constructor(public stageNumber: number,
                 private config: StageConfig,
                 private grassHeight: number,
-                private shootingCrosshair: ShootingCrosshair) {
+                private shootingCrosshair: ShootingCrosshair,
+                private grenade: Grenade
+    ) {
         this.canvas = getCanvas();
         this.context = get2DContext()
     }
@@ -118,16 +121,27 @@ export class Stage {
     getElementsToDraw(): Drawable[] {
         return [
             ...this.ducks,
-            this.shootingCrosshair
+            this.shootingCrosshair,
+            this.grenade
         ];
     }
 
     shoot(point: Point) {
-        // console.log('shoot', point)
-        const duck = this.ducks.find(duck => !duck.death && CollisionUtils.isPointInDrawableBounds(point, duck));
-        if (duck) {
-            this.shootEnemy(duck)
+        console.log('shoot', point)
+        const isGrenade = CollisionUtils.isPointInDrawableBounds(point, this.grenade);
+        if (isGrenade && this.grenade.remaining > 0) {
+            [...this.ducks].forEach(duck => this.shootEnemy(duck));
+            this.grenade.remaining--;
+        } else {
+            const duck = this.ducks.find(duck => !duck.death && CollisionUtils.isPointInDrawableBounds(point, duck));
+            if (duck) {
+                this.shootEnemy(duck)
+            }
         }
+
+        // cheap shoot feedback effect ahead
+        this.canvas.style.filter = 'brightness(150%)';
+        setTimeout(() => this.canvas.style.filter = 'brightness(100%)', 75);
     }
 
     private shootEnemy(duck: Duck) {

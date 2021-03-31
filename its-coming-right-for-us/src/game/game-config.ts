@@ -10,6 +10,7 @@ export interface GameConfig {
         fontColor: string
     },
     shootingCrosshair: DrawableConfig,
+    grenade: DrawableConfig,
     stages: StageConfig[];
     grassHeight: number;
 }
@@ -26,6 +27,13 @@ export const gameConfig: GameConfig = {
         width: 50,
         height: 50,
         image: sprites.crosshair
+    },
+    grenade: {
+        x: 265,
+        y: 500,
+        width: 100,
+        height: 100,
+        image: sprites.grenade
     },
     stages: stagesConfig,
     grassHeight: getGrassHeight()
