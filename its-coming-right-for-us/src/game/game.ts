@@ -43,6 +43,7 @@ export class Game {
         if (this.continues === 0) {
             this.continues = 3;
         }
+        this.grenade = new Grenade(this.config.grenade);
 
         this.listenOnUserInputs();
         try {
