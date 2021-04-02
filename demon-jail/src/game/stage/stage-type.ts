@@ -5,3 +5,12 @@ export enum StageType {
     around = "around",
     cross = "cross",
 }
+
+export namespace StageType {
+    export function format(stageType: StageType): string {
+        return stageType.toString()
+            .split('_')
+            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+            .join(' ');
+    }
+}

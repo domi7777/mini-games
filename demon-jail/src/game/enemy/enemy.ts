@@ -4,6 +4,7 @@ import {Direction} from "../drawing/direction.enum";
 import {Drawable} from "../drawing/drawable";
 import {override} from "../utils/override.decorator";
 import {Constants} from "../constants";
+import {EnemyType} from "./enemy-type.enum";
 
 const sprites = require('../../../assets/monsters.png') // 48 x 72
 
@@ -12,17 +13,7 @@ const spriteEnemyHeight = 72;
 const numberOfFramesPerAnimation = 3;
 const numberOfAnimations = 4;
 
-export enum EnemyType {
-    bat = 'bat',
-    blob = 'blob',
-    orc = 'orc',
-    bull = 'bull',
-    vampire = 'vampire',
-    skeleton = 'skeleton',
-    ghost = 'ghost',
-    succubus = 'succubus'
-}
-
+// FIXME move to enemiesConfig?
 const spriteFramesConfig = {
     [EnemyType.bat]: {x: 0, y: 0},
     [EnemyType.blob]: {x: numberOfFramesPerAnimation * spriteEnemyWidth, y: 0},
@@ -34,27 +25,25 @@ const spriteFramesConfig = {
     [EnemyType.succubus]: {x: 3 * numberOfFramesPerAnimation * spriteEnemyWidth, y: numberOfAnimations * spriteEnemyHeight},
 }
 
-const defaultEnemyType = EnemyType.blob;
-
 export interface EnemyConfig {
-    spawnDelay: number,
+    spawnDelay?: number,
     position?: Position,
     center?: Position,
     maxLives?: number,
     lives?: number,
-    id?: number;
     currentFrameXNumber?: number;
     currentFrameYNumber?: number;
     lastFrameChangeTime?: number;
     direction?: Direction;
-    enemyType?: EnemyType;
+    enemyType: EnemyType;
     scoreValue?: number;
     speed?: number;
+    scale?: number;
 }
 
 export class Enemy extends AnimatedDrawable {
     static readonly defaultSpeed = 5;
-    private static readonly speedMultiplier = 0.2; // to make speed param more convenient
+    private static readonly speedMultiplier = 0.17; // to make speed param more convenient
 
     readonly speed;// 1px per frame === 60px per sec. Is multiplied by speedMultiplier
     readonly scoreValue: number;
@@ -69,11 +58,9 @@ export class Enemy extends AnimatedDrawable {
             width: 48,
             color: 'red',
             image: sprites, // TODO config
-            scale: 0.6,
+            scale: config.scale || 0.6,
             drawShape: false,
-            framesStartPosition: config.enemyType
-                ? spriteFramesConfig[config.enemyType]
-                : spriteFramesConfig[defaultEnemyType],
+            framesStartPosition: spriteFramesConfig[config.enemyType],
             numberOfFrames: 3,
             x: config.position?.x || Constants.tileSize * 2,
             y: config.position?.y || -15,
@@ -87,8 +74,8 @@ export class Enemy extends AnimatedDrawable {
         if (config.center) {
             this.center = config.center; // FIXME make everything use center position by default
         }
-        this.enemyType = config.enemyType || defaultEnemyType;
-        this.spawnDelay = config.spawnDelay;
+        this.enemyType = config.enemyType;
+        this.spawnDelay = config.spawnDelay || 0;
         this.speed = (config.speed || Enemy.defaultSpeed) * Enemy.speedMultiplier;
         this.scoreValue = config.scoreValue || this.maxLives * this.speed * 1.5;
     }

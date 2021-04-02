@@ -13,6 +13,8 @@ import {Dog} from "./dog/dog";
 import {dogConfig} from "./dog/dog.config";
 import {Drawable} from "./drawing/drawable";
 import {DogAnimationType} from "./dog/dog-animation.type";
+import {Grenade} from "./grenade";
+import {CollisionUtils} from "./utils/collision-utils";
 
 export class Game {
     private pause = false;
@@ -23,6 +25,7 @@ export class Game {
     private currentStage?: Stage;
     private running = false;
     private shootingCrosshair: ShootingCrosshair;
+    private grenade: Grenade;
     private continues = 3; // TODO configurable
     private previousRound = 0;
     private dogAnimation: Dog | null = null;
@@ -30,6 +33,7 @@ export class Game {
     constructor(private config: GameConfig) {
         document.onvisibilitychange = () => this.pause = document.hidden;
         this.shootingCrosshair = new ShootingCrosshair(this.config.shootingCrosshair)
+        this.grenade = new Grenade(this.config.grenade)
     }
 
     async start() {
@@ -85,7 +89,8 @@ export class Game {
             this.previousRound,
             stageConfig,
             this.config.grassHeight,
-            this.shootingCrosshair
+            this.shootingCrosshair,
+            this.grenade
         );
     }
 
@@ -96,11 +101,18 @@ export class Game {
         this.canvas.onclick = (event: MouseEvent) => {
             this.shootingCrosshair.setPosition(this.getMousePos(event));
             const position = this.shootingCrosshair.position;
-            this.currentStage?.shoot({
+            const point = {
                 // x, y are top left of the actual position clicked
                 x: position.x + this.shootingCrosshair.width / 2,
                 y: position.y + this.shootingCrosshair.height / 2
-            });
+            };
+            this.currentStage?.shoot(point);
+            if (this.dogAnimation
+                && CollisionUtils.isPointInDrawableBounds(point, this.dogAnimation)
+                && this.grenade.remaining < this.grenade.max
+            ) {
+                this.grenade.remaining++;
+            }
         }
     }
 
@@ -161,9 +173,15 @@ export class Game {
 
         // bottom center
         this.drawText(`Score: ${this.shootingCrosshair.score}`, {
-            x: 200,
+            x: 180,
             y: bottomY
         });
+
+        // grenade
+        this.drawText(`${this.grenade.remaining}`, {
+            x: (this.grenade.x + this.grenade.width / 2) - 8,
+            y: (this.grenade.y + this.grenade.height / 2) + 13
+        })
     }
 
     private drawText(text: string, point: Point, fontSize = this.config.text.fontSize) {
