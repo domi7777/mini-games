@@ -15,7 +15,7 @@ body {
     font-family: 'Press Start 2P', sans-serif;
     font-size: 12px;
     line-height: 1.5em;
-    overflow: hidden;
+    overflow: hidden; /* important to avoid scrolling in some smartphones */
 }
 
 a:hover {
