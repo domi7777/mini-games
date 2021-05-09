@@ -1,16 +1,17 @@
-# [It's coming right for us](https://domi7777.github.io/mini-games/its-coming-right-for-us/dist)
+# It's coming right for us
 
-Based on good old Duck Hunt
+## [Click here to play](https://domi7777.github.io/mini-games/its-coming-right-for-us/dist)
 
-[https://youtu.be/B3RJUMm-hd0](https://youtu.be/B3RJUMm-hd0)
+- Visuals shamelessly stolen from old but gold Duck Hunt
+- Sounds and music are a courtesy of [Cecy-T](https://soundcloud.com/cecy-t)
+
+
+[The name of the game comes from here](https://youtu.be/B3RJUMm-hd0)
+
 
 ## Stack:
 - Typescript
 - Webpack
 - html
 - css
-
-#TODO
-
-## Improvements
 
