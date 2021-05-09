@@ -1,6 +1,8 @@
 const path = require('path');
 const HtmlWebPackPlugin = require('html-webpack-plugin');
 
+const src = path.resolve(__dirname, 'node_modules');
+
 module.exports = {
     entry: path.resolve(__dirname, './src/main.ts'),
     module: {
@@ -17,6 +19,10 @@ module.exports = {
             {
                 test: /\.(png|jpg)$/,
                 loader: 'url-loader'
+            },
+            {
+                test: /\.(mp3|ogg)$/,
+                use: 'file-loader',
             }
         ],
 

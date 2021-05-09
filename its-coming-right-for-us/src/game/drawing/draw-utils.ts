@@ -26,7 +26,7 @@ export abstract class DrawUtils {
                     fontColor = 'White',
                     fontFamily = 'Arial') {
         this.context.fillStyle = fontColor;
-        this.context.font = `${fontSize}px '${fontFamily}'`;
+        this.context.font = `${fontSize}px '${fontFamily}', sans-serif`;
         this.wrapText(text, position.x, position.y, this.width - 50, fontSize);
     }
 

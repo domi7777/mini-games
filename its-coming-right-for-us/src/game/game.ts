@@ -1,20 +1,21 @@
-import {getCanvas, getHeight, getWidth} from "./global-functions";
-import {Stage} from "./stage/stage";
-import {DrawUtils} from "./drawing/draw-utils";
-import {AnimatedDrawable} from "./animations/animated-drawable";
-import {Point} from "./drawing/point";
-import {ShootingCrosshair} from "./shooting-crosshair";
-import {AnimationUtils} from "./animations/animation-utils";
-import {GameConfig} from "./game-config";
-import {TimeUtils} from "./utils/time-utils";
-import {StageConfig} from "./stage/stages-config";
-import {DuckAnimationType} from "./duck/duck-animation-type.enum";
-import {Dog} from "./dog/dog";
-import {dogConfig} from "./dog/dog.config";
-import {Drawable} from "./drawing/drawable";
-import {DogAnimationType} from "./dog/dog-animation.type";
-import {Grenade} from "./grenade";
-import {CollisionUtils} from "./utils/collision-utils";
+import { getCanvas, getHeight, getWidth } from './global-functions';
+import { Stage } from './stage/stage';
+import { DrawUtils } from './drawing/draw-utils';
+import { AnimatedDrawable } from './animations/animated-drawable';
+import { Point } from './drawing/point';
+import { ShootingCrosshair } from './shooting-crosshair';
+import { AnimationUtils } from './animations/animation-utils';
+import { GameConfig } from './game-config';
+import { TimeUtils } from './utils/time-utils';
+import { StageConfig } from './stage/stages-config';
+import { DuckAnimationType } from './duck/duck-animation-type.enum';
+import { Dog } from './dog/dog';
+import { dogConfig } from './dog/dog.config';
+import { Drawable } from './drawing/drawable';
+import { DogAnimationType } from './dog/dog-animation.type';
+import { Grenade } from './grenade';
+import { CollisionUtils } from './utils/collision-utils';
+import { RandomUtils } from './utils/random.utils';
 
 export class Game {
     private pause = false;
@@ -29,14 +30,17 @@ export class Game {
     private continues = 3; // TODO configurable
     private previousRound = 0;
     private dogAnimation: Dog | null = null;
+    private duckSoundsInterval?: NodeJS.Timeout;
+    private voicesInterval?: NodeJS.Timeout;
 
     constructor(private config: GameConfig) {
         document.onvisibilitychange = () => this.pause = document.hidden;
-        this.shootingCrosshair = new ShootingCrosshair(this.config.shootingCrosshair)
-        this.grenade = new Grenade(this.config.grenade)
+        this.shootingCrosshair = new ShootingCrosshair(this.config.shootingCrosshair);
+        this.grenade = new Grenade(this.config.grenade);
+        this.playSoundtrackLoop(config.soundtrack); // TODO sth to mute all sounds
     }
 
-    async start() {
+    async start() { // FIXME too big refactor
         this.running = true;
         console.log('starting game');
         this.canvas.classList.add('in-game');
@@ -54,7 +58,11 @@ export class Game {
                 }
                 this.previousRound = i;
                 this.currentStage = await this.createNewStage(stageConfig);
+                this.config.reloadNoises[RandomUtils.getNumber(0, this.config.reloadNoises.length)]
+                    .play().catch(console.error);
+                this.addRandomNoises();
                 const missedDucks = await this.currentStage.run();
+                this.removeRandomNoises();
 
                 if (missedDucks > 3) {
                     throw new Error('You missed too many birds!');
@@ -62,13 +70,14 @@ export class Game {
                     const dogAnimationType = missedDucks === 0 ? DogAnimationType.twoDucks : DogAnimationType.oneDuck;
                     await this.createDogAnimation(dogAnimationType);
                     this.running = false;
-                    this.drawText(`You missed ${missedDucks} ducks.`, {x: 70, y: 300});
+                    this.drawText(`You missed ${missedDucks} ducks.`, { x: 70, y: 300 });
                     await TimeUtils.waitMillis(3000);
                 }
             }
             this.previousRound = 0;
             this.gameOver('Congratulations! ', `Score: ${this.shootingCrosshair.score}`);
         } catch (error) {
+            this.removeRandomNoises();
             await this.createDogAnimation(DogAnimationType.laughing);
             this.continues--;
             console.log(this.continues);
@@ -81,8 +90,8 @@ export class Game {
 
     private async createNewStage(stageConfig: StageConfig): Promise<Stage> {
         DrawUtils.clearScreen();
-        this.drawText(`Round ${this.previousRound}`, {x: 85, y: 150}, 25);
-        this.drawText(stageConfig.title, {x: 40, y: 220}, 15);
+        this.drawText(`Round ${this.previousRound}`, { x: 85, y: 150 }, 25);
+        this.drawText(stageConfig.title, { x: 40, y: 220 }, 15);
         await TimeUtils.waitMillis(4000);
         this.running = true;
         window.requestAnimationFrame(this.executeNextAnimationFrameActions.bind(this));
@@ -108,13 +117,17 @@ export class Game {
                 y: position.y + this.shootingCrosshair.height / 2
             };
             this.currentStage?.shoot(point);
-            if (this.dogAnimation
-                && CollisionUtils.isPointInDrawableBounds(point, this.dogAnimation)
-                && this.grenade.remaining < this.grenade.max
-            ) {
+
+            const sounds = this.shootingCrosshair.sounds;
+            const randomIndex = RandomUtils.getNumber(0, sounds.length - 1);
+            sounds[randomIndex].play().catch(console.error);
+
+            // Rewards shooting the dog
+            if (this.dogAnimation && CollisionUtils.isPointInDrawableBounds(point, this.dogAnimation)
+                && this.grenade.remaining < this.grenade.max) {
                 this.grenade.remaining++;
             }
-        }
+        };
     }
 
     executeNextAnimationFrameActions(date: number): void {
@@ -135,6 +148,45 @@ export class Game {
                 .forEach(element => this.setNextAnimationFrameIfNeeded(element as AnimatedDrawable<DuckAnimationType>));
             DrawUtils.draw(...elementsToDraw);
             this.drawHUD();
+        }
+    }
+
+    private playSoundtrackLoop(soundtrack: HTMLAudioElement) {
+        // TODO audioService or sth
+        const audioContext = new AudioContext(); // needed for perfect looping
+        const track = audioContext.createMediaElementSource(soundtrack);
+        const gainNode = audioContext.createGain();
+        track
+            .connect(gainNode)
+            .connect(audioContext.destination);
+        gainNode.gain.value = 0.1;
+        soundtrack.loop = true;
+        soundtrack.play().catch(console.error);
+    }
+
+    private addRandomNoises() { // not beautiful, but gets the job done
+        this.duckSoundsInterval = setInterval(() => {
+            if (RandomUtils.getBoolean()) {
+                const duckNoises = this.config.duckNoises;
+                const randomIndex = RandomUtils.getNumber(0, duckNoises.length);
+                duckNoises[randomIndex].play().catch(console.error);
+            }
+        }, 500);
+        this.voicesInterval = setInterval(() => {
+            if (RandomUtils.getBoolean()) {
+                const voices = this.config.voices;
+                const randomIndex = RandomUtils.getNumber(0, voices.length);
+                voices[randomIndex].play().catch(console.error);
+            }
+        }, 7000);
+    }
+
+    private removeRandomNoises() {
+        if (this.duckSoundsInterval) {
+            clearInterval(this.duckSoundsInterval);
+        }
+        if (this.voicesInterval) {
+            clearInterval(this.voicesInterval);
         }
     }
 
@@ -180,9 +232,9 @@ export class Game {
 
         // grenade
         this.drawText(`${this.grenade.remaining}`, {
-            x: (this.grenade.x + this.grenade.width / 2) - 8,
-            y: (this.grenade.y + this.grenade.height / 2) + 13
-        })
+            x: ( this.grenade.x + this.grenade.width / 2 ) - 8,
+            y: ( this.grenade.y + this.grenade.height / 2 ) + 13
+        });
     }
 
     private drawText(text: string, point: Point, fontSize = this.config.text.fontSize) {
@@ -202,15 +254,15 @@ export class Game {
     gameOver(reason: string, gameOverText = 'Game over') {
         this.drawScreen();
         this.running = false;
-        setTimeout(() => this.drawText(reason, {x: 40, y: 220}), 200);
-        setTimeout(() => this.drawText(gameOverText, {x: 40, y: 300}), 1000);
+        setTimeout(() => this.drawText(reason, { x: 40, y: 220 }), 200);
+        setTimeout(() => this.drawText(gameOverText, { x: 40, y: 300 }), 1000);
         setTimeout(() => {
             this.canvas.classList.remove('in-game');
-            this.drawText('Retry?', {x: (this.width / 2) - 40, y: 360}, 30);
+            this.drawText('Retry?', { x: ( this.width / 2 ) - 40, y: 360 }, 30);
             const retry = () => {
                 this.canvas.removeEventListener('click', retry);
                 this.start();
-            }
+            };
             this.canvas.addEventListener('click', retry);
         }, 2000);
     }
