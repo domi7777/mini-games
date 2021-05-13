@@ -152,16 +152,28 @@ export class Game {
     }
 
     private playSoundtrackLoop(soundtrack: HTMLAudioElement) {
-        // TODO audioService or sth
-        const audioContext = new AudioContext(); // needed for perfect looping
-        const track = audioContext.createMediaElementSource(soundtrack);
-        const gainNode = audioContext.createGain();
-        track
-            .connect(gainNode)
-            .connect(audioContext.destination);
-        gainNode.gain.value = 0.1;
-        soundtrack.loop = true;
-        soundtrack.play().catch(console.error);
+        try {
+            // TODO audioService or sth
+            const AudioContextConstructor = window.AudioContext || ( window as any ).webkitAudioContext;
+            const audioContext: AudioContext = new AudioContextConstructor(); // needed for perfect looping
+            const track = audioContext.createMediaElementSource(soundtrack);
+            const gainNode = audioContext.createGain();
+            track
+                .connect(gainNode)
+                .connect(audioContext.destination);
+            gainNode.gain.value = 0.1;
+            soundtrack.loop = true;
+            soundtrack.play().catch(console.error);
+        } catch (error) {
+            console.log(error);
+            const errorContainer = document.getElementById('error');
+            if (errorContainer) {
+                errorContainer.innerHTML =
+                    `${error.message}
+                    ${error.stack}`;
+                errorContainer.style.display = 'block';
+            }
+        }
     }
 
     private addRandomNoises() { // not beautiful, but gets the job done

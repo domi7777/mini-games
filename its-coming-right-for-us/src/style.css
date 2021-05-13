@@ -39,3 +39,7 @@ canvas#game:hover {
 canvas#game.in-game:hover {
     cursor: none;
 }
+
+#error {
+    display: none;
+}
